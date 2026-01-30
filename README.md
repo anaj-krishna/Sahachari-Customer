@@ -1,50 +1,38 @@
-# Welcome to your Expo app 👋
+# SAHACHARI Customer App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native (Expo) mobile app for customers of the SAHACHARI delivery service.
 
-## Get started
+## Current Features
+- User registration (with name, email, address, serviceable pincodes, password)
+- User login
+- Token-based authentication (persisted via AsyncStorage)
+- Protected home screen with logout
+- Role check (only `USER` role allowed in this customer app)
+- Basic form validation & error display
 
-1. Install dependencies
+## Tech Stack
+- React Native + Expo
+- Expo Router (file-based routing)
+- TanStack Query (for API mutations)
+- Zustand (lightweight auth state management)
+- Axios (API client)
+- AsyncStorage (token & user persistence)
+- Tailwind CSS via `nativewind`
 
-   ```bash
-   npm install
-   ```
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Setup & Run
 
 ```bash
-npm run reset-project
-```
+# Install dependencies
+npm install
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+# Start development server
+npx expo start
+# or
+npm run start
 
-## Learn more
+# Clear cache if needed
+npx expo start -c
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Backend API: Currently points to http://localhost:3000 → change to production URL in services/api.ts before building.
+Only USER role is accepted in this app version.
