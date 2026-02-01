@@ -17,7 +17,7 @@ export default function Login() {
       {
         onSuccess: () => {
           setErrorMsg(null);
-          router.replace("/(tabs)/home");
+          router.replace("/(tabs)/products");
         },
         onError: (err: any) => {
           const msg = err?.response?.data?.message || "Invalid credentials or server error";

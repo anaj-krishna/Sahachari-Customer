@@ -5,6 +5,7 @@ import { User, Role } from '../types/user';
 type AuthState = {
   token: string | null;
   user: User | null;
+  hydrated: boolean;
   setAuth: (token: string, user: User) => Promise<void>;
   logout: () => Promise<void>;
   hydrate: () => Promise<void>;
@@ -13,6 +14,7 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   user: null,
+  hydrated: false,
 
   setAuth: async (token, user) => {
     if (user.role !== Role.USER) {
@@ -24,7 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       AsyncStorage.setItem('token', token),
       AsyncStorage.setItem('user', JSON.stringify(user)),
     ]);
-    set({ token, user });
+    set({ token, user, hydrated: true });
   },
 
   logout: async () => {
@@ -44,5 +46,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     ]);
     if (token) set({ token });
     if (userStr) set({ user: JSON.parse(userStr) });
+    set({ hydrated: true });
   },
 }));
