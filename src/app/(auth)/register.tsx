@@ -9,7 +9,9 @@ export default function Register() {
   const [form, setForm] = useState({
     name: "",
     email: "",
-    shopAddress: "",
+    address: "",
+    address2: "",
+    mobileNumber: "",
     password: "",
     pincodesInput: "", // temporary string input
   });
@@ -18,7 +20,7 @@ export default function Register() {
 
   const submit = () => {
     // Basic validation
-    if (!form.name || !form.email || !form.shopAddress || !form.password || !form.pincodesInput) {
+    if (!form.name || !form.email || !form.address || !form.password || !form.pincodesInput) {
       setErrorMsg("Please fill all fields");
       return;
     }
@@ -35,12 +37,17 @@ export default function Register() {
 
     register.mutate(
       {
-        ...form,
+        name: form.name,
+        email: form.email,
+        address: form.address,
+        address2: form.address2 || undefined,
+        mobileNumber: form.mobileNumber || undefined,
         serviceablePincodes,
+        password: form.password,
         role: Role.USER,
       },
       {
-        onSuccess: () => router.replace("/(tabs)/home"),
+        onSuccess: () => router.replace("/(auth)/login"),
         onError: (err) => {
           setErrorMsg(err?.response?.data?.message || "Registration failed. Try again.");
         },
@@ -68,8 +75,19 @@ export default function Register() {
       />
       <TextInput
         className="border border-gray-300 rounded-md px-4 py-3 mb-3"
-        placeholder="Shop Address / Delivery Address"
-        onChangeText={(v) => setForm({ ...form, shopAddress: v })}
+        placeholder="Address / Delivery Address"
+        onChangeText={(v) => setForm({ ...form, address: v })}
+      />
+      <TextInput
+        className="border border-gray-300 rounded-md px-4 py-3 mb-3"
+        placeholder="Address Line 2 (optional)"
+        onChangeText={(v) => setForm({ ...form, address2: v })}
+      />
+      <TextInput
+        className="border border-gray-300 rounded-md px-4 py-3 mb-3"
+        placeholder="Mobile Number (optional)"
+        keyboardType="phone-pad"
+        onChangeText={(v) => setForm({ ...form, mobileNumber: v })}
       />
       <TextInput
         className="border border-gray-300 rounded-md px-4 py-3 mb-3"

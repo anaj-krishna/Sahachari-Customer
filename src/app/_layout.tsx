@@ -4,6 +4,7 @@ import { Slot } from 'expo-router';
 import { useEffect } from 'react';
 import { useAuthStore } from '../store/auth.store';
 import '../../global.css';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   const hydrate = useAuthStore((s) => s.hydrate);
@@ -13,8 +14,10 @@ export default function RootLayout() {
   }, [hydrate]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Slot />
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <Slot />
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }

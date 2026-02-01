@@ -9,13 +9,20 @@ export default function Login() {
   const login = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const submit = () => {
     login.mutate(
       { email, password },
-      { 
-        onSuccess: () => router.replace("/(tabs)/home"),
-        onError: () => {} // already showing error below
+      {
+        onSuccess: () => {
+          setErrorMsg(null);
+          router.replace("/(tabs)/home");
+        },
+        onError: (err: any) => {
+          const msg = err?.response?.data?.message || "Invalid credentials or server error";
+          setErrorMsg(msg);
+        },
       }
     );
   };
@@ -31,14 +38,20 @@ export default function Login() {
         placeholder="Email"
         keyboardType="email-address"
         autoCapitalize="none"
-        onChangeText={setEmail}
+        onChangeText={(v) => {
+          setEmail(v);
+          setErrorMsg(null);
+        }}
       />
 
       <TextInput
         className="border border-gray-300 rounded-md px-4 py-3 mb-4"
         placeholder="Password"
         secureTextEntry
-        onChangeText={setPassword}
+        onChangeText={(v) => {
+          setPassword(v);
+          setErrorMsg(null);
+        }}
       />
 
       <Pressable 
@@ -51,9 +64,9 @@ export default function Login() {
         </Text>
       </Pressable>
 
-      {login.isError && (
+      {errorMsg && (
         <Text className="text-red-500 text-center mt-3">
-          Invalid credentials or server error
+          {errorMsg}
         </Text>
       )}
 

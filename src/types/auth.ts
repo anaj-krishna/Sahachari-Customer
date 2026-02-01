@@ -8,7 +8,9 @@ export interface LoginRequest {
 export interface RegisterRequest {
   name: string;
   email: string;
-  shopAddress: string;
+  address: string;
+  address2?: string;
+  mobileNumber?: string;
   serviceablePincodes: string[];
   password: string;
   role: Role.USER;
@@ -16,5 +18,5 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   accessToken: string;
-  user: User;
+  user?: User;
 }
