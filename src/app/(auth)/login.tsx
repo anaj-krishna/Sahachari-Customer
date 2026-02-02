@@ -17,13 +17,15 @@ export default function Login() {
       {
         onSuccess: () => {
           setErrorMsg(null);
-          router.replace("/(tabs)/products");
+          router.replace("/(tabs)/home");
         },
         onError: (err: any) => {
-          const msg = err?.response?.data?.message || "Invalid credentials or server error";
+          const msg =
+            err?.response?.data?.message ||
+            "Invalid credentials or server error";
           setErrorMsg(msg);
         },
-      }
+      },
     );
   };
 
@@ -54,8 +56,8 @@ export default function Login() {
         }}
       />
 
-      <Pressable 
-        className={`bg-blue-600 py-3 rounded-md ${login.isPending ? 'opacity-50' : ''}`}
+      <Pressable
+        className={`bg-blue-600 py-3 rounded-md ${login.isPending ? "opacity-50" : ""}`}
         onPress={submit}
         disabled={login.isPending}
       >
@@ -65,13 +67,11 @@ export default function Login() {
       </Pressable>
 
       {errorMsg && (
-        <Text className="text-red-500 text-center mt-3">
-          {errorMsg}
-        </Text>
+        <Text className="text-red-500 text-center mt-3">{errorMsg}</Text>
       )}
 
       {/* Add this link to register */}
-      <Pressable 
+      <Pressable
         className="mt-6"
         onPress={() => router.push("/(auth)/register")}
       >

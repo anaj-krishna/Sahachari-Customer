@@ -1,9 +1,17 @@
 import { Redirect } from 'expo-router';
+import { View, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../store/auth.store';
 
 export default function Index() {
-  const token = useAuthStore((s) => s.token);
+  const { token, hydrated } = useAuthStore();
 
+  if (!hydrated) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
   if (token) {
     return <Redirect href="/(tabs)/home" />;
   }
