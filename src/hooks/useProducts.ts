@@ -11,6 +11,7 @@ export const useProducts = (params?: ProductsQueryParams) =>
   useQuery({
     queryKey: ["products", params],
     queryFn: () => getProducts(params),
+    
   });
 
 export const useProduct = (id?: string) =>
