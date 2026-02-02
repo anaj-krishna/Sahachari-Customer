@@ -1,11 +1,17 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text } from "react-native";
+
 import { Role } from "../../types/user";
 import { useRegister } from "../../hooks/useAuth";
 
+import { AuthLayout } from "@/components/AuthLayout";
+import { AuthInput } from "@/components/AuthInput";
+import { AuthButton } from "@/components/AuthButton";
+import { AuthError } from "@/components/AuthError";
 export default function Register() {
   const register = useRegister();
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -13,14 +19,19 @@ export default function Register() {
     address2: "",
     mobileNumber: "",
     password: "",
-    pincodesInput: "", // temporary string input
+    pincodesInput: "",
   });
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const submit = () => {
-    // Basic validation
-    if (!form.name || !form.email || !form.address || !form.password || !form.pincodesInput) {
+    if (
+      !form.name ||
+      !form.email ||
+      !form.address ||
+      !form.password ||
+      !form.pincodesInput
+    ) {
       setErrorMsg("Please fill all fields");
       return;
     }
@@ -28,10 +39,12 @@ export default function Register() {
     const serviceablePincodes = form.pincodesInput
       .split(",")
       .map(p => p.trim())
-      .filter(p => p.length === 6 && /^\d{6}$/.test(p)); // simple 6-digit pincode validation
+      .filter(p => /^\d{6}$/.test(p));
 
     if (serviceablePincodes.length === 0) {
-      setErrorMsg("Enter at least one valid 6-digit pincode (comma separated)");
+      setErrorMsg(
+        "Enter at least one valid 6-digit pincode (comma separated)"
+      );
       return;
     }
 
@@ -48,78 +61,66 @@ export default function Register() {
       },
       {
         onSuccess: () => router.replace("/(auth)/login"),
-        onError: (err) => {
-          setErrorMsg(err?.response?.data?.message || "Registration failed. Try again.");
-        },
+        onError: (err: any) =>
+          setErrorMsg(
+            err?.response?.data?.message ||
+              "Registration failed. Try again."
+          ),
       }
     );
   };
 
   return (
-    <View className="flex-1 justify-center bg-white px-6">
-      <Text className="text-3xl font-bold text-blue-600 text-center mb-8">
-        SAHACHARI - Register
-      </Text>
-
-      <TextInput
-        className="border border-gray-300 rounded-md px-4 py-3 mb-3"
+    <AuthLayout title="SAHACHARI - Register">
+      <AuthInput
         placeholder="Full Name"
-        onChangeText={(v) => setForm({ ...form, name: v })}
+        onChangeText={v => setForm({ ...form, name: v })}
       />
-      <TextInput
-        className="border border-gray-300 rounded-md px-4 py-3 mb-3"
+
+      <AuthInput
         placeholder="Email"
-        keyboardType="email-address"
         autoCapitalize="none"
-        onChangeText={(v) => setForm({ ...form, email: v })}
+        keyboardType="email-address"
+        onChangeText={v => setForm({ ...form, email: v })}
       />
-      <TextInput
-        className="border border-gray-300 rounded-md px-4 py-3 mb-3"
+
+      <AuthInput
         placeholder="Address / Delivery Address"
-        onChangeText={(v) => setForm({ ...form, address: v })}
+        onChangeText={v => setForm({ ...form, address: v })}
       />
-      <TextInput
-        className="border border-gray-300 rounded-md px-4 py-3 mb-3"
+
+      <AuthInput
         placeholder="Address Line 2 (optional)"
-        onChangeText={(v) => setForm({ ...form, address2: v })}
+        onChangeText={v => setForm({ ...form, address2: v })}
       />
-      <TextInput
-        className="border border-gray-300 rounded-md px-4 py-3 mb-3"
+
+      <AuthInput
         placeholder="Mobile Number (optional)"
         keyboardType="phone-pad"
-        onChangeText={(v) => setForm({ ...form, mobileNumber: v })}
+        onChangeText={v => setForm({ ...form, mobileNumber: v })}
       />
-      <TextInput
-        className="border border-gray-300 rounded-md px-4 py-3 mb-3"
-        placeholder="Serviceable Pincodes (comma separated, e.g. 560001,560002)"
+
+      <AuthInput
+        placeholder="Serviceable Pincodes (comma separated)"
         keyboardType="numeric"
-        onChangeText={(v) => setForm({ ...form, pincodesInput: v })}
+        onChangeText={v => setForm({ ...form, pincodesInput: v })}
       />
-      <TextInput
-        className="border border-gray-300 rounded-md px-4 py-3 mb-4"
+
+      <AuthInput
         placeholder="Password"
         secureTextEntry
-        onChangeText={(v) => setForm({ ...form, password: v })}
+        onChangeText={v => setForm({ ...form, password: v })}
       />
 
-      <Pressable 
-        className={`bg-blue-600 py-3 rounded-md ${register.isPending ? 'opacity-50' : ''}`}
+      <AuthButton
+        title="Create Account"
+        loading={register.isPending}
         onPress={submit}
-        disabled={register.isPending}
-      >
-        <Text className="text-white text-center font-semibold text-lg">
-          {register.isPending ? "Creating..." : "Create Account"}
-        </Text>
-      </Pressable>
+      />
 
-      { (errorMsg || register.isError) && (
-        <Text className="text-red-500 text-center mt-3">
-          {errorMsg || register.error?.response?.data?.message || "Something went wrong"}
-        </Text>
-      )}
+      <AuthError message={errorMsg} />
 
-      {/* Optional: link back to login */}
-      <Pressable 
+      <Pressable
         className="mt-6"
         onPress={() => router.push("/(auth)/login")}
       >
@@ -127,6 +128,6 @@ export default function Register() {
           Already have an account? Log In
         </Text>
       </Pressable>
-    </View>
+    </AuthLayout>
   );
 }

@@ -41,6 +41,14 @@ api.interceptors.response.use(
     if (error?.response?.status === 401) {
       // Helpful warning during development
       console.warn("API 401 Unauthorized — token may be missing or invalid.");
+      // Clear stored auth so app shows login next (best-effort)
+      try {
+        useAuthStore
+          .getState()
+          .logout()
+          .catch(() => {});
+      } catch (err) {
+            console.error("Failed to clear auth store after 401", err);}
     }
     return Promise.reject(error);
   },

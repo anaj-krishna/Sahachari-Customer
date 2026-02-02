@@ -1,9 +1,12 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text } from "react-native";
 import { useLogin } from "../../hooks/useAuth";
 
-// ... existing imports
+import { AuthLayout } from "@/components/AuthLayout";
+import { AuthInput } from "@/components/AuthInput";
+import { AuthButton } from "@/components/AuthButton";
+import { AuthError } from "@/components/AuthError";
 
 export default function Login() {
   const login = useLogin();
@@ -15,70 +18,53 @@ export default function Login() {
     login.mutate(
       { email, password },
       {
-        onSuccess: () => {
-          setErrorMsg(null);
-          router.replace("/(tabs)/home");
-        },
-        onError: (err: any) => {
-          const msg =
+        onSuccess: () => router.replace("/(tabs)/home"),
+        onError: (err: any) =>
+          setErrorMsg(
             err?.response?.data?.message ||
-            "Invalid credentials or server error";
-          setErrorMsg(msg);
-        },
-      },
+              "Invalid credentials or server error"
+          ),
+      }
     );
   };
 
   return (
-    <View className="flex-1 justify-center bg-white px-6">
-      <Text className="text-3xl font-bold text-blue-600 text-center mb-8">
-        SAHACHARI
-      </Text>
-
-      <TextInput
-        className="border border-gray-300 rounded-md px-4 py-3 mb-3"
+    <AuthLayout title="SAHACHARI">
+      <AuthInput
         placeholder="Email"
-        keyboardType="email-address"
         autoCapitalize="none"
-        onChangeText={(v) => {
+        keyboardType="email-address"
+        onChangeText={(v:any) => {
           setEmail(v);
           setErrorMsg(null);
         }}
       />
 
-      <TextInput
-        className="border border-gray-300 rounded-md px-4 py-3 mb-4"
+      <AuthInput
         placeholder="Password"
         secureTextEntry
-        onChangeText={(v) => {
+        onChangeText={(v:any) => {
           setPassword(v);
           setErrorMsg(null);
         }}
       />
 
-      <Pressable
-        className={`bg-blue-600 py-3 rounded-md ${login.isPending ? "opacity-50" : ""}`}
+      <AuthButton
+        title="Log In"
+        loading={login.isPending}
         onPress={submit}
-        disabled={login.isPending}
-      >
-        <Text className="text-white text-center font-semibold text-lg">
-          {login.isPending ? "Logging in..." : "Log In"}
-        </Text>
-      </Pressable>
+      />
 
-      {errorMsg && (
-        <Text className="text-red-500 text-center mt-3">{errorMsg}</Text>
-      )}
+      <AuthError message={errorMsg} />
 
-      {/* Add this link to register */}
       <Pressable
-        className="mt-6"
         onPress={() => router.push("/(auth)/register")}
+        className="mt-6"
       >
         <Text className="text-blue-600 text-center">
-          No account yet ? Create one !
+          No account yet? Create one!
         </Text>
       </Pressable>
-    </View>
+    </AuthLayout>
   );
 }
