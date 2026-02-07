@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -12,7 +12,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { cancelOrder, getOrderById, getOrders } from "../../services/orders.api";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  cancelOrder,
+  getOrderById,
+  getOrders,
+} from "../../services/orders.api";
 
 export default function Orders() {
   const router = useRouter();
@@ -52,18 +57,14 @@ export default function Orders() {
   };
 
   const handleCancelOrder = (orderId: string) => {
-    Alert.alert(
-      "Cancel Order",
-      "Are you sure you want to cancel this order?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes, Cancel",
-          style: "destructive",
-          onPress: () => cancelMutation.mutate(orderId),
-        },
-      ]
-    );
+    Alert.alert("Cancel Order", "Are you sure you want to cancel this order?", [
+      { text: "No", style: "cancel" },
+      {
+        text: "Yes, Cancel",
+        style: "destructive",
+        onPress: () => cancelMutation.mutate(orderId),
+      },
+    ]);
   };
 
   const handleCloseModal = () => {
@@ -88,25 +89,35 @@ export default function Orders() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
+      <SafeAreaView
+        edges={["top", "bottom"]}
+        className="flex-1 items-center justify-center bg-gray-50"
+      >
         <ActivityIndicator size="large" color="#2563eb" />
         <Text className="mt-2 text-gray-500">Loading orders...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View className="flex-1 bg-gray-50 items-center justify-center px-6">
-        <Text className="text-xl font-bold text-red-600 mb-2">Error loading orders</Text>
+      <SafeAreaView
+        edges={["top", "bottom"]}
+        className="flex-1 bg-gray-50 items-center justify-center px-6"
+      >
+        <Text className="text-xl font-bold text-red-600 mb-2">
+          Error loading orders
+        </Text>
         <Text className="text-gray-500 text-center mb-4">{String(error)}</Text>
         <Pressable
-          onPress={() => queryClient.invalidateQueries({ queryKey: ["orders"] })}
+          onPress={() =>
+            queryClient.invalidateQueries({ queryKey: ["orders"] })
+          }
           className="bg-blue-600 px-6 py-3 rounded-lg"
         >
           <Text className="text-white font-bold">Retry</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -115,9 +126,14 @@ export default function Orders() {
 
   if (!orders || orders.length === 0) {
     return (
-      <View className="flex-1 bg-gray-50 items-center justify-center px-6">
+      <SafeAreaView
+        edges={["top", "bottom"]}
+        className="flex-1 bg-gray-50 items-center justify-center px-6"
+      >
         <Text className="text-6xl mb-4">📦</Text>
-        <Text className="text-xl font-bold text-gray-800 mb-2">No orders yet</Text>
+        <Text className="text-xl font-bold text-gray-800 mb-2">
+          No orders yet
+        </Text>
         <Text className="text-gray-500 text-center mb-6">
           Your past orders will appear here
         </Text>
@@ -127,12 +143,12 @@ export default function Orders() {
         >
           <Text className="text-white font-bold">Start Shopping</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-gray-50">
       <FlatList
         data={orders}
         contentContainerStyle={{ padding: 16 }}
@@ -146,9 +162,13 @@ export default function Orders() {
             <View className="flex-row justify-between items-start mb-3">
               <View className="flex-1">
                 <Text className="text-xs text-gray-500 mb-1">Order ID</Text>
-                <Text className="font-bold text-gray-800">{item.checkoutId}</Text>
+                <Text className="font-bold text-gray-800">
+                  {item.checkoutId}
+                </Text>
               </View>
-              <View className={`px-3 py-1 rounded-full ${getStatusColor(item.status)}`}>
+              <View
+                className={`px-3 py-1 rounded-full ${getStatusColor(item.status)}`}
+              >
                 <Text className="text-xs font-semibold">{item.status}</Text>
               </View>
             </View>
@@ -167,7 +187,8 @@ export default function Orders() {
               </Text>
               {item.items?.slice(0, 2).map((orderItem: any, idx: number) => (
                 <Text key={idx} className="text-gray-700 text-sm">
-                  • {orderItem.productId?.name || "Product"} × {orderItem.quantity}
+                  • {orderItem.productId?.name || "Product"} ×{" "}
+                  {orderItem.quantity}
                 </Text>
               ))}
               {item.items?.length > 2 && (
@@ -194,14 +215,17 @@ export default function Orders() {
         animationType="slide"
         onRequestClose={handleCloseModal}
       >
-        <View className="flex-1 bg-white">
+        <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-white">
           {/* Modal Header */}
-          <View className="bg-blue-600 px-4 pt-12 pb-4 flex-row items-center justify-between">
+          <SafeAreaView
+            edges={["top"]}
+            className="bg-blue-600 px-4 pb-4 flex-row items-center justify-between"
+          >
             <Text className="text-xl font-bold text-white">Order Details</Text>
             <Pressable onPress={handleCloseModal}>
               <Text className="text-white text-2xl">×</Text>
             </Pressable>
-          </View>
+          </SafeAreaView>
 
           {!selectedOrder ? (
             <View className="flex-1 items-center justify-center">
@@ -214,9 +238,13 @@ export default function Orders() {
                 <View className="flex-row justify-between items-center">
                   <View>
                     <Text className="text-gray-500 text-xs mb-1">Order ID</Text>
-                    <Text className="font-bold text-lg">{selectedOrder.checkoutId}</Text>
+                    <Text className="font-bold text-lg">
+                      {selectedOrder.checkoutId}
+                    </Text>
                   </View>
-                  <View className={`px-4 py-2 rounded-lg ${getStatusColor(selectedOrder.status)}`}>
+                  <View
+                    className={`px-4 py-2 rounded-lg ${getStatusColor(selectedOrder.status)}`}
+                  >
                     <Text className="font-bold">{selectedOrder.status}</Text>
                   </View>
                 </View>
@@ -253,7 +281,8 @@ export default function Orders() {
                 <Text className="text-gray-700 leading-6">
                   {selectedOrder.deliveryAddress?.street}
                   {"\n"}
-                  {selectedOrder.deliveryAddress?.city}, {selectedOrder.deliveryAddress?.zipCode}
+                  {selectedOrder.deliveryAddress?.city},{" "}
+                  {selectedOrder.deliveryAddress?.zipCode}
                   {"\n"}
                   Phone: {selectedOrder.deliveryAddress?.phone}
                   {selectedOrder.deliveryAddress?.notes && (
@@ -268,7 +297,10 @@ export default function Orders() {
               <View className="p-4 border-b border-gray-200">
                 <Text className="font-bold text-lg mb-2">Store</Text>
                 <Text className="text-gray-700">
-                  🏪 {selectedOrder.storeId?.name || selectedOrder.storeId || "Store Name"}
+                  🏪{" "}
+                  {selectedOrder.storeId?.name ||
+                    selectedOrder.storeId ||
+                    "Store Name"}
                 </Text>
                 <Text className="text-gray-500 text-sm mt-1">
                   Pickup: {selectedOrder.pickupAddress}
@@ -305,8 +337,8 @@ export default function Orders() {
               )}
             </ScrollView>
           )}
-        </View>
+        </SafeAreaView>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }

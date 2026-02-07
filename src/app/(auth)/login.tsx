@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Pressable, Text } from "react-native";
 import { useLogin } from "../../hooks/useAuth";
 
-import { AuthLayout } from "@/components/AuthLayout";
-import { AuthInput } from "@/components/AuthInput";
 import { AuthButton } from "@/components/AuthButton";
 import { AuthError } from "@/components/AuthError";
+import { AuthInput } from "@/components/AuthInput";
+import { AuthLayout } from "@/components/AuthLayout";
 
 export default function Login() {
   const login = useLogin();
@@ -22,9 +22,9 @@ export default function Login() {
         onError: (err: any) =>
           setErrorMsg(
             err?.response?.data?.message ||
-              "Invalid credentials or server error"
+              "Invalid credentials or server error",
           ),
-      }
+      },
     );
   };
 
@@ -34,7 +34,7 @@ export default function Login() {
         placeholder="Email"
         autoCapitalize="none"
         keyboardType="email-address"
-        onChangeText={(v:any) => {
+        onChangeText={(v: any) => {
           setEmail(v);
           setErrorMsg(null);
         }}
@@ -43,17 +43,13 @@ export default function Login() {
       <AuthInput
         placeholder="Password"
         secureTextEntry
-        onChangeText={(v:any) => {
+        onChangeText={(v: any) => {
           setPassword(v);
           setErrorMsg(null);
         }}
       />
 
-      <AuthButton
-        title="Log In"
-        loading={login.isPending}
-        onPress={submit}
-      />
+      <AuthButton title="Log In" loading={login.isPending} onPress={submit} />
 
       <AuthError message={errorMsg} />
 
