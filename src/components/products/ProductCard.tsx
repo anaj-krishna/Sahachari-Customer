@@ -1,8 +1,8 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
-import { useAuthStore } from "../store/auth.store";
-import { Product } from "../types/product";
+import { useAuthStore } from "../../store/auth.store";
+import { Product } from "../../types/product";
 
 export function ProductCard({ product }: { product: Product }) {
   const router = useRouter();

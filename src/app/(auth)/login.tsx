@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Pressable, Text } from "react-native";
 import { useLogin } from "../../hooks/useAuth";
 
-import { AuthButton } from "@/components/AuthButton";
-import { AuthError } from "@/components/AuthError";
-import { AuthInput } from "@/components/AuthInput";
-import { AuthLayout } from "@/components/AuthLayout";
+import { AuthButton } from "@/components/auth/AuthButton";
+import { AuthError } from "@/components/auth/AuthError";
+import { AuthInput } from "@/components/auth/AuthInput";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 export default function Login() {
   const login = useLogin();

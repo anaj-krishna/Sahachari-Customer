@@ -7,16 +7,21 @@ const S3_BASE =
 function normalizeImage(img: any): string | null {
   if (!img) return null;
 
+  // Prefer configured S3 base; otherwise fall back to API base URL so relative keys become absolute
+  const base = S3_BASE || (api.defaults?.baseURL || "").replace(/\/$/, "");
+
   if (typeof img === "string") {
-    return img.startsWith("http")
-      ? img
-      : `${S3_BASE}/${img.replace(/^\/+/, "")}`;
+    if (img.startsWith("http")) return img;
+    if (!base) return null;
+    return `${base}/${img.replace(/^\/+/, "")}`;
   }
 
   if (typeof img === "object") {
     const key = img.key || img.path || img.url;
     if (!key) return null;
-    return key.startsWith("http") ? key : `${S3_BASE}/${key}`;
+    if (key.startsWith("http")) return key;
+    if (!base) return null;
+    return `${base}/${String(key).replace(/^\/+/, "")}`;
   }
 
   return null;

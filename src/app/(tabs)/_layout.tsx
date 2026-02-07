@@ -1,15 +1,20 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  Home,
+  ShoppingCart,
+  Receipt,
+  Wrench,
+  Settings,
+} from "lucide-react-native";
+
 import { useAuthStore } from "../../store/auth.store";
 import { Role } from "../../types/user";
 
 export default function TabsLayout() {
   const { token, user, hydrated } = useAuthStore();
   const insets = useSafeAreaInsets();
-  const bottomPadding = (insets.bottom ?? 0) + 8;
-  const tabBarHeight = 64 + (insets.bottom ?? 0);
 
   if (!hydrated) {
     return (
@@ -29,41 +34,39 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          height: tabBarHeight,
-          paddingBottom: bottomPadding,
-          paddingTop: 8,
+          height: 64 + Math.min(insets.bottom, 30), // 👈 closer to nav bar
+          paddingBottom: Math.min(insets.bottom, 30),
+          paddingTop: 6, 
           borderTopWidth: 1,
           borderTopColor: "#e5e7eb",
-          backgroundColor: "#ffffff",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -1 },
-          shadowOpacity: 0.06,
-          shadowRadius: 6,
-          elevation: 10,
+          backgroundColor: "#fff",
+          elevation: 8,
         },
       }}
     >
-      {TAB_CONFIG.map((t) => (
+      {TABS.map(({ name, label, Icon }) => (
         <Tabs.Screen
-          key={t.name}
-          name={t.name}
+          key={name}
+          name={name}
           options={{
             tabBarIcon: ({ focused }) => (
-              <View className="items-center justify-center">
-                <Ionicons
-                  name={focused ? t.activeIcon : t.icon}
-                  size={22}
+              <View className="items-center justify-center w-[64px] mt-2">
+                <Icon
+                  size={24}
+                  strokeWidth={focused ? 2.6 : 2}
                   color={focused ? "#2563eb" : "#6b7280"}
                 />
-                <View className="mt-1">
-                  <Text
-                    className={`text-xs ${
-                      focused ? "text-blue-600 font-semibold" : "text-gray-500"
-                    }`}
-                  >
-                    {t.label}
-                  </Text>
-                </View>
+                <Text
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  className={`text-[11px] mt-1 ${
+                    focused
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {label}
+                </Text>
               </View>
             ),
           }}
@@ -72,25 +75,11 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
-const TAB_CONFIG = [
-  { name: "home", label: "Home", icon: "home-outline", activeIcon: "home" },
-  { name: "cart", label: "Cart", icon: "cart-outline", activeIcon: "cart" },
-  {
-    name: "orders",
-    label: "Orders",
-    icon: "receipt-outline",
-    activeIcon: "receipt",
-  },
-  {
-    name: "services",
-    label: "Services",
-    icon: "construct-outline",
-    activeIcon: "construct",
-  },
-  {
-    name: "settings",
-    label: "Settings",
-    icon: "settings-outline",
-    activeIcon: "settings",
-  },
+
+const TABS = [
+  { name: "home", label: "Home", Icon: Home },
+  { name: "cart", label: "Cart", Icon: ShoppingCart },
+  { name: "orders", label: "Orders", Icon: Receipt },
+  { name: "services", label: "Services", Icon: Wrench },
+  { name: "settings", label: "Settings", Icon: Settings },
 ] as const;

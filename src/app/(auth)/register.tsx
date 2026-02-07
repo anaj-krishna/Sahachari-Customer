@@ -5,10 +5,10 @@ import { Pressable, Text } from "react-native";
 import { useRegister } from "../../hooks/useAuth";
 import { Role } from "../../types/user";
 
-import { AuthButton } from "@/components/AuthButton";
-import { AuthError } from "@/components/AuthError";
-import { AuthInput } from "@/components/AuthInput";
-import { AuthLayout } from "@/components/AuthLayout";
+import { AuthButton } from "@/components/auth/AuthButton";
+import { AuthError } from "@/components/auth/AuthError";
+import { AuthInput } from "@/components/auth/AuthInput";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 export default function Register() {
   const register = useRegister();
 

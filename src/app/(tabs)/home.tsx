@@ -6,7 +6,7 @@ import {
   View,
 } from "react-native";
 import { useState } from "react";
-import { ProductCard } from "../../components/ProductCard";
+import { ProductCard } from "../../components/products/ProductCard";
 import { useProducts } from "../../hooks/useProducts";
 
 export default function Home() {
