@@ -1,42 +1,39 @@
 {
   "expo": {
-    "name": "",
+    "name": "Sahachari",
     "slug": "customers",
-    "version": "1.0.0",
+    "version": "1.0.19",
     "orientation": "portrait",
     "icon": "./assets/sahachari.jpeg",
-    "scheme": "custumers",
+    "scheme": "customers",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourname.customers",
+      "buildNumber": "19"
     },
-
     "android": {
+      "package": "com.yourname.customers", 
+      "versionCode": 19,
       "adaptiveIcon": {
         "foregroundImage": "./assets/sahachari.jpeg",
         "backgroundColor": "#ffffff"
       }
     },
-
     "splash": {
       "image": "./assets/sahachari.jpeg",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "web": {
       "bundler": "metro",
       "favicon": "./assets/sahachari.jpeg"
     },
-
     "plugins": ["expo-router"],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     }
   }
 }
-  

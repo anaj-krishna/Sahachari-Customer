@@ -1,13 +1,13 @@
 import { Redirect, Tabs } from "expo-router";
-import { ActivityIndicator, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Home,
-  ShoppingCart,
   Receipt,
+  ShoppingBag,
+  ShoppingCart,
   Wrench,
-  Settings,
 } from "lucide-react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuthStore } from "../../store/auth.store";
 import { Role } from "../../types/user";
@@ -29,57 +29,58 @@ export default function TabsLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: false,
-        tabBarStyle: {
-          height: 64 + Math.min(insets.bottom, 30), // 👈 closer to nav bar
-          paddingBottom: Math.min(insets.bottom, 30),
-          paddingTop: 6, 
-          borderTopWidth: 1,
-          borderTopColor: "#e5e7eb",
-          backgroundColor: "#fff",
-          elevation: 8,
-        },
-      }}
-    >
-      {TABS.map(({ name, label, Icon }) => (
-        <Tabs.Screen
-          key={name}
-          name={name}
-          options={{
-            tabBarIcon: ({ focused }) => (
-              <View className="items-center justify-center w-[64px] mt-2">
-                <Icon
-                  size={24}
-                  strokeWidth={focused ? 2.6 : 2}
-                  color={focused ? "#2563eb" : "#6b7280"}
-                />
-                <Text
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  className={`text-[11px] mt-1 ${
-                    focused
-                      ? "text-blue-600 font-semibold"
-                      : "text-gray-500"
-                  }`}
-                >
-                  {label}
-                </Text>
-              </View>
-            ),
-          }}
-        />
-      ))}
-    </Tabs>
+    <View style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          headerLeft: () => null,
+          tabBarShowLabel: false,
+          tabBarStyle: {
+            height: 64 + Math.min(insets.bottom, 30), // 👈 closer to nav bar
+            paddingBottom: Math.min(insets.bottom, 30),
+            paddingTop: 6,
+            borderTopWidth: 1,
+            borderTopColor: "#e5e7eb",
+            backgroundColor: "#fff",
+            elevation: 8,
+          },
+        }}
+      >
+        {TABS.map(({ name, label, Icon }) => (
+          <Tabs.Screen
+            key={name}
+            name={name}
+            options={{
+              tabBarIcon: ({ focused }) => (
+                <View className="items-center justify-center w-[64px] mt-2">
+                  <Icon
+                    size={24}
+                    strokeWidth={focused ? 2.6 : 2}
+                    color={focused ? "#2563eb" : "#6b7280"}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    className={`text-[11px] mt-1 ${
+                      focused ? "text-blue-600 font-semibold" : "text-gray-500"
+                    }`}
+                  >
+                    {label}
+                  </Text>
+                </View>
+              ),
+            }}
+          />
+        ))}
+      </Tabs>
+    </View>
   );
 }
 
 const TABS = [
   { name: "home", label: "Home", Icon: Home },
+  { name: "products", label: "Products", Icon: ShoppingBag },
   { name: "cart", label: "Cart", Icon: ShoppingCart },
   { name: "orders", label: "Orders", Icon: Receipt },
   { name: "services", label: "Services", Icon: Wrench },
-  { name: "settings", label: "Settings", Icon: Settings },
 ] as const;

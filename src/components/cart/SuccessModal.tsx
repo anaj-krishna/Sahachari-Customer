@@ -16,7 +16,7 @@ export function SuccessModal({ visible, onClose }: SuccessModalProps) {
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-black/50 items-center justify-center px-6">
-        <div className="bg-white rounded-3xl p-8 items-center max-w-sm w-full">
+        <View className="bg-white rounded-3xl p-8 items-center max-w-sm w-full">
           {/* Success Icon */}
           <View className="bg-green-100 rounded-full p-4 mb-6">
             <CheckCircle size={64} color="#22C55E" strokeWidth={2} />
@@ -39,7 +39,7 @@ export function SuccessModal({ visible, onClose }: SuccessModalProps) {
               Continue Shopping
             </Text>
           </Pressable>
-        </div>
+        </View>
       </View>
     </Modal>
   );

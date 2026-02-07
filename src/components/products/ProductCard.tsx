@@ -1,13 +1,14 @@
-import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
-import { useAuthStore } from "../../store/auth.store";
 import { Product } from "../../types/product";
 
-export function ProductCard({ product }: { product: Product }) {
-  const router = useRouter();
-  const token = useAuthStore((s) => s.token);
-
+export function ProductCard({
+  product,
+  onPress,
+}: {
+  product: Product;
+  onPress?: (id: string) => void;
+}) {
   const originalPrice = Number(product.price) || 0;
   const finalPrice = product.finalPrice ?? originalPrice;
   const hasDiscount = finalPrice < originalPrice;
@@ -26,14 +27,9 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <Pressable
-      className="w-1/2 p-2"
+      className="flex-1 p-2"
       onPress={() => {
-        // ensure user is authenticated on native app before navigating into protected product details
-        if (!token) {
-          router.push("/(auth)/login");
-          return;
-        }
-        router.push(`/product/${product.id}`);
+        if (onPress) onPress(product.id);
       }}
     >
       <View className="bg-white rounded-lg p-3 shadow">

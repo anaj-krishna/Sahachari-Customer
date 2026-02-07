@@ -1,26 +1,28 @@
 import axios from "axios";
 import { useAuthStore } from "../store/auth.store";
 
+// Use the environment variable for production builds
+// Fallback to local IP only if the env variable is missing
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.2:3000";
+
 export const api = axios.create({
-  baseURL: "http://192.168.1.2:3000",
+  baseURL: BASE_URL,
 });
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
   if (__DEV__) {
-    // Don't print the full token, only presence and length for safety
     console.debug(
       "[api.request]",
       `${config.method?.toUpperCase()} ${config.url}`,
       {
         hasToken: Boolean(token),
-        tokenLength: token ? token.length : 0,
-        headers: {
-          Authorization: config.headers?.Authorization,
-        },
-      },
+        tokenLength: token?.length || 0,
+      }
     );
   }
 
@@ -30,26 +32,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (__DEV__) {
-      console.debug(
-        "[api.response.error]",
-        error?.response?.status,
-        error?.response?.data,
-      );
-    }
-
     if (error?.response?.status === 401) {
-      // Helpful warning during development
-      console.warn("API 401 Unauthorized — token may be missing or invalid.");
-      // Clear stored auth so app shows login next (best-effort)
+      console.warn("API 401 Unauthorized — clearing auth store.");
       try {
-        useAuthStore
-          .getState()
-          .logout()
-          .catch(() => {});
+        useAuthStore.getState().logout();
       } catch (err) {
-            console.error("Failed to clear auth store after 401", err);}
+        console.error("Failed to clear auth store after 401", err);
+      }
     }
     return Promise.reject(error);
-  },
+  }
 );

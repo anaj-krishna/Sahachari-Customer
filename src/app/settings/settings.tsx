@@ -1,26 +1,51 @@
+import { useRouter } from "expo-router";
+import {
+  Camera,
+  ChevronRight,
+  LogOut,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+} from "lucide-react-native";
 import React from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { User, Camera, Mail, Phone, MapPin, ChevronRight, LogOut } from "lucide-react-native";
-import { useAuthStore } from "../../store/auth.store";
-import { useProfile } from "../../hooks/useProfile";
 import { EditProfileModal } from "../../components/settings/EditProfileModal";
-
+import { useProfile } from "../../hooks/useProfile";
+import { useAuthStore } from "../../store/auth.store";
 export default function Settings() {
   const logout = useAuthStore((s) => s.logout);
-  const { 
-    profile, isLoading, showEditModal, editField, editValue, 
-    setEditValue, isUpdating, openEditModal, closeEditModal, handleSave 
+  const router = useRouter();
+  const {
+    profile,
+    isLoading,
+    showEditModal,
+    editField,
+    editValue,
+    setEditValue,
+    isUpdating,
+    openEditModal,
+    closeEditModal,
+    handleSave,
   } = useProfile();
 
-  if (isLoading) return (
-    <View className="flex-1 items-center justify-center bg-gray-50">
-      <ActivityIndicator size="large" color="#1877F2" />
-    </View>
-  );
+  if (isLoading)
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-50">
+        <ActivityIndicator size="large" color="#1877F2" />
+      </View>
+    );
 
   const SettingItem = ({ icon: Icon, label, value, field }: any) => (
-    <Pressable 
+    <Pressable
       onPress={() => field && openEditModal(field, value)}
       className="flex-row items-center justify-between py-4 border-b border-gray-100 active:bg-gray-50"
     >
@@ -30,7 +55,12 @@ export default function Settings() {
         </View>
         <View className="flex-1">
           <Text className="text-gray-500 text-xs mb-1">{label}</Text>
-          <Text className="text-gray-800 font-semibold text-base" numberOfLines={1}>{value || "Not set"}</Text>
+          <Text
+            className="text-gray-800 font-semibold text-base"
+            numberOfLines={1}
+          >
+            {value || "Not set"}
+          </Text>
         </View>
       </View>
       {field && <ChevronRight size={18} color="#9CA3AF" />}
@@ -48,7 +78,10 @@ export default function Settings() {
           <View className="bg-blue-600 px-6 py-8 items-center">
             <View className="relative">
               {profile?.image ? (
-                <Image source={{ uri: profile.image }} className="w-24 h-24 rounded-full border-4 border-white" />
+                <Image
+                  source={{ uri: profile.image }}
+                  className="w-24 h-24 rounded-full border-4 border-white"
+                />
               ) : (
                 <View className="w-24 h-24 rounded-full bg-white items-center justify-center border-4 border-white">
                   <User size={40} color="#1877F2" />
@@ -58,20 +91,48 @@ export default function Settings() {
                 <Camera size={16} color="white" />
               </Pressable>
             </View>
-            <Text className="text-white font-bold text-2xl mt-4">{profile?.name || "User"}</Text>
+            <Text className="text-white font-bold text-2xl mt-4">
+              {profile?.name || "User"}
+            </Text>
           </View>
 
           <View className="p-4">
-            <SettingItem icon={User} label="Full Name" value={profile?.name} field="name" />
+            <SettingItem
+              icon={User}
+              label="Full Name"
+              value={profile?.name}
+              field="name"
+            />
             <SettingItem icon={Mail} label="Email" value={profile?.email} />
-            <SettingItem icon={Phone} label="Mobile" value={profile?.mobileNumber} field="mobileNumber" />
-            <SettingItem icon={MapPin} label="Primary Address" value={profile?.address} field="address" />
-            <SettingItem icon={MapPin} label="Secondary Address" value={profile?.address2} field="address2" />
+            <SettingItem
+              icon={Phone}
+              label="Mobile"
+              value={profile?.mobileNumber}
+              field="mobileNumber"
+            />
+            <SettingItem
+              icon={MapPin}
+              label="Primary Address"
+              value={profile?.address}
+              field="address"
+            />
+            <SettingItem
+              icon={MapPin}
+              label="Secondary Address"
+              value={profile?.address2}
+              field="address2"
+            />
           </View>
         </View>
 
         <View className="bg-white mx-4 mt-4 rounded-2xl shadow-sm">
-          <Pressable onPress={logout} className="flex-row items-center p-4 active:bg-red-50">
+          <Pressable
+            onPress={async () => {
+              await logout();
+              router.replace("/(auth)/login");
+            }}
+            className="flex-row items-center p-4 active:bg-red-50"
+          >
             <LogOut size={20} color="#EF4444" />
             <Text className="text-red-600 font-semibold ml-3">Logout</Text>
           </Pressable>
