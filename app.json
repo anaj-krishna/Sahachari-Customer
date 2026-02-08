@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourname.customers",
+      "bundleIdentifier": "com.corestoneinnovation.sahachariuser",
       "buildNumber": "19"
     },
     "android": {
