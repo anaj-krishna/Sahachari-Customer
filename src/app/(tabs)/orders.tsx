@@ -1,9 +1,11 @@
-import { FlatList, Text, Pressable, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+// app/(tabs)/orders/index.tsx
 import { useRouter } from "expo-router";
-import { useOrders } from "../../hooks/useOrders";
+import { AlertCircle, RefreshCw, ShoppingBag } from "lucide-react-native";
+import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { OrderCard } from "../../components/orders/OrderCard";
 import { OrderDetailsModal } from "../../components/orders/OrderDetailsModal";
+import { useOrders } from "../../hooks/useOrders";
 
 export default function Orders() {
   const router = useRouter();
@@ -13,31 +15,72 @@ export default function Orders() {
     handleCloseModal, refetch 
   } = useOrders();
 
-  if (isLoading) return (
-    <SafeAreaView className="flex-1 items-center justify-center bg-gray-50">
-      <ActivityIndicator size="large" color="#2563eb" />
-      <Text className="mt-2 text-gray-500">Loading orders...</Text>
-    </SafeAreaView>
-  );
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-gray-50">
+        <View className="bg-white p-8 rounded-3xl shadow-xl items-center">
+          <ActivityIndicator size="large" color="#2563eb" />
+          <Text className="mt-4 text-gray-600 font-semibold">Loading your orders...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-  if (error || !orders.length) return (
-    <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center px-6">
-      <Text className="text-6xl mb-4">{error ? "⚠️" : "📦"}</Text>
-      <Text className="text-xl font-bold text-gray-800 mb-2">{error ? "Error loading orders" : "No orders yet"}</Text>
-      <Pressable onPress={() => error ? refetch() : router.push("/home")} className="bg-blue-600 px-6 py-3 rounded-lg">
-        <Text className="text-white font-bold">{error ? "Retry" : "Start Shopping"}</Text>
-      </Pressable>
-    </SafeAreaView>
-  );
+  if (error || !orders?.length) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center px-6">
+        <View className="bg-white rounded-3xl shadow-2xl p-8 items-center max-w-sm mx-auto">
+          <View className={`${error ? 'bg-red-100' : 'bg-blue-100'} p-6 rounded-full mb-6`}>
+            {error ? (
+              <AlertCircle size={48} color="#dc2626" />
+            ) : (
+              <ShoppingBag size={48} color="#2563eb" />
+            )}
+          </View>
+          
+          <Text className="text-2xl font-bold text-gray-800 mb-3 text-center">
+            {error ? "Oops! Something went wrong" : "No orders yet"}
+          </Text>
+          
+          <Text className="text-gray-500 text-center mb-6 leading-6">
+            {error 
+              ? "We couldn't load your orders. Please try again." 
+              : "Start shopping and your orders will appear here"}
+          </Text>
+          
+          <Pressable 
+            onPress={() => error ? refetch() : router.push("/(tabs)/home")} 
+            className="bg-blue-600 px-8 py-4 rounded-2xl shadow-lg active:bg-blue-700 flex-row items-center"
+          >
+            {error && <RefreshCw size={20} color="white" className="mr-2" />}
+            <Text className="text-white font-bold text-lg ml-2">
+              {error ? "Try Again" : "Start Shopping"}
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-gray-50">
+      {/* Premium Header */}
+      <View className="bg-white px-6 py-5 shadow-sm border-b border-gray-100">
+        <Text className="text-3xl font-bold text-gray-800 mb-1">My Orders</Text>
+        <Text className="text-gray-500 font-medium">
+          {orders.length} {orders.length === 1 ? 'order' : 'orders'} in total
+        </Text>
+      </View>
+
       <FlatList
         data={orders}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => <OrderCard item={item} onPress={handleOrderPress} />}
+        showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View className="h-3" />}
       />
+      
       <OrderDetailsModal
         visible={showDetailsModal}
         order={selectedOrder}

@@ -1,57 +1,331 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
+  ArrowLeft,
   Camera,
   ChevronRight,
+  HelpCircle,
   LogOut,
   Mail,
   MapPin,
   Phone,
+  Settings as SettingsIcon,
   User,
 } from "lucide-react-native";
-import React from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   Text,
+  ToastAndroid,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditProfileModal } from "../../components/settings/EditProfileModal";
-import { useProfile } from "../../hooks/useProfile";
 import { useAuthStore } from "../../store/auth.store";
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+const S3_BASE_URL =
+  process.env.EXPO_PUBLIC_S3_BASE_URL ||
+  "https://sahachari-uploads.s3.ap-south-1.amazonaws.com";
+
+interface UserProfile {
+  _id: string;
+  name: string;
+  email: string;
+  role?: string;
+  address?: string;
+  address2?: string;
+  mobileNumber?: string;
+  serviceablePincodes?: string[];
+  image?: string;
+}
+
 export default function Settings() {
   const logout = useAuthStore((s) => s.logout);
   const router = useRouter();
-  const {
-    profile,
-    isLoading,
-    showEditModal,
-    editField,
-    editValue,
-    setEditValue,
-    isUpdating,
-    openEditModal,
-    closeEditModal,
-    handleSave,
-  } = useProfile();
+  const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
-  if (isLoading)
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editField, setEditField] = useState<
+    "name" | "mobileNumber" | "address" | "address2" | "serviceablePincodes" | null
+  >(null);
+  const [editValue, setEditValue] = useState("");
+
+  // Fetch user profile
+  const { data: profile, isLoading } = useQuery<UserProfile, Error>({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      const authToken = await useAuthStore.getState().token;
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch user data");
+      return response.json();
+    },
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({
+      field,
+      value,
+    }: {
+      field: string;
+      value: string | string[];
+    }) => {
+      const authToken = await useAuthStore.getState().token;;
+      const body: any = {};
+
+      if (field === "serviceablePincodes") {
+        body[field] =
+          typeof value === "string"
+            ? value
+                .split(",")
+                .map((p) => p.trim())
+                .filter((p) => p.length > 0)
+            : value;
+      } else {
+        body[field] = value;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/users/update-me`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update profile");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      setShowEditModal(false);
+      
+      if (Platform.OS === "android") {
+        ToastAndroid.show("Profile updated successfully!", ToastAndroid.SHORT);
+      } else {
+        Alert.alert("Success", "Profile updated successfully!");
+      }
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to update profile");
+    },
+  });
+
+  // Upload avatar mutation
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (imageUri: string) => {
+      const authToken = await useAuthStore.getState().token;
+
+      // Clean the URI
+      let cleanPath = imageUri.split(":http")[0];
+      cleanPath = cleanPath.replace("blob:", "");
+
+      // Extract extension
+      const extensionMatch = cleanPath.match(/\.([a-zA-Z0-9]+)$/);
+      const fileExtension = extensionMatch
+        ? extensionMatch[1].toLowerCase()
+        : "jpg";
+
+      // Generate clean filename
+      const randomId = Math.random().toString(36).substring(7);
+      const fileName = `avatar_${Date.now()}_${randomId}.${fileExtension}`;
+
+      // Set valid MIME type
+      const fileType =
+        fileExtension === "png"
+          ? "image/png"
+          : fileExtension === "webp"
+          ? "image/webp"
+          : "image/jpeg";
+
+      // Get presigned URL
+      const presignedResponse = await fetch(`${API_BASE_URL}/s3/presigned-url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          fileName,
+          fileType,
+          folder: "avatars",
+        }),
+      });
+
+      if (!presignedResponse.ok) {
+        throw new Error("Failed to get presigned URL");
+      }
+
+      const { url: presignedUrl, key } = await presignedResponse.json();
+
+      // Convert image URI to blob
+      const imageResponse = await fetch(imageUri);
+      const blob = await imageResponse.blob();
+
+      // Upload to S3
+      const uploadResponse = await fetch(presignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": fileType,
+        },
+        body: blob,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload avatar to S3");
+      }
+
+      // Update user profile with key
+      const updateResponse = await fetch(`${API_BASE_URL}/users/update-me`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ image: key }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error("Failed to update profile with avatar");
+      }
+
+      return updateResponse.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      
+      if (Platform.OS === "android") {
+        ToastAndroid.show("Profile picture updated!", ToastAndroid.SHORT);
+      } else {
+        Alert.alert("Success", "Profile picture updated!");
+      }
+    },
+    onError: (error: any) => {
+      console.error("Avatar upload error:", error);
+      Alert.alert("Error", error.message || "Failed to upload avatar");
+    },
+  });
+
+  const openEditModal = (
+    field: "name" | "mobileNumber" | "address" | "address2" | "serviceablePincodes",
+    currentValue?: string
+  ) => {
+    let value = "";
+    if (profile) {
+      if (field === "serviceablePincodes" && profile.serviceablePincodes) {
+        value = profile.serviceablePincodes.join(", ");
+      } else {
+        value = (profile[field] as string) || "";
+      }
+    }
+    setEditField(field);
+    setEditValue(currentValue || value || "");
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditField(null);
+    setEditValue("");
+  };
+
+  const handleSave = () => {
+    if (editField) {
+      updateProfileMutation.mutate({ field: editField, value: editValue });
+    }
+  };
+
+  const handleChangeAvatar = async () => {
+    try {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission needed",
+          "Please grant permission to access photos"
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        uploadAvatarMutation.mutate(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image");
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          await logout();
+          router.replace("/(auth)/login");
+        },
+      },
+    ]);
+  };
+
+  if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#1877F2" />
+        <ActivityIndicator size="large" color="#2563EB" />
+        <Text className="text-gray-500 mt-4 font-medium">
+          Loading profile...
+        </Text>
       </View>
     );
+  }
 
-  const SettingItem = ({ icon: Icon, label, value, field }: any) => (
+  const SettingItem = ({
+    icon: Icon,
+    label,
+    value,
+    field,
+  }: {
+    icon: any;
+    label: string;
+    value?: string;
+    field?: "name" | "mobileNumber" | "address" | "address2" | "serviceablePincodes";
+  }) => (
     <Pressable
       onPress={() => field && openEditModal(field, value)}
       className="flex-row items-center justify-between py-4 border-b border-gray-100 active:bg-gray-50"
+      disabled={!field}
     >
       <View className="flex-row items-center flex-1">
         <View className="w-10 h-10 rounded-full bg-blue-50 items-center justify-center mr-3">
-          <Icon size={20} color="#1877F2" />
+          <Icon size={20} color="#2563EB" strokeWidth={2} />
         </View>
         <View className="flex-1">
           <Text className="text-gray-500 text-xs mb-1">{label}</Text>
@@ -63,40 +337,92 @@ export default function Settings() {
           </Text>
         </View>
       </View>
-      {field && <ChevronRight size={18} color="#9CA3AF" />}
+      {field && <ChevronRight size={18} color="#9CA3AF" strokeWidth={2} />}
     </Pressable>
   );
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-gray-50">
-      <ScrollView>
-        <View className="bg-white px-6 py-6 border-b border-gray-200">
-          <Text className="text-3xl font-bold text-gray-800">Settings</Text>
+    <View className="flex-1 bg-gray-50">
+      {/* Header */}
+      <LinearGradient
+        colors={["#2563EB", "#1D4ED8"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ paddingTop: insets.top + 16, paddingBottom: 16 }}
+      >
+        <View className="px-6">
+          <View className="flex-row items-center justify-between">
+            <Pressable
+              onPress={() => router.back()}
+              className="bg-white/20 rounded-full p-2.5 backdrop-blur-sm"
+            >
+              <ArrowLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
+            </Pressable>
+            <Text className="text-2xl font-bold text-white flex-1 text-center">
+              Settings
+            </Text>
+            <View className="w-12" />
+          </View>
         </View>
+      </LinearGradient>
 
-        <View className="bg-white mx-4 mt-6 rounded-2xl shadow-sm overflow-hidden">
-          <View className="bg-blue-600 px-6 py-8 items-center">
-            <View className="relative">
-              {profile?.image ? (
-                <Image
-                  source={{ uri: profile.image }}
-                  className="w-24 h-24 rounded-full border-4 border-white"
-                />
-              ) : (
-                <View className="w-24 h-24 rounded-full bg-white items-center justify-center border-4 border-white">
-                  <User size={40} color="#1877F2" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Profile Card */}
+        <View className="bg-white mx-4 mt-6 rounded-3xl shadow-lg overflow-hidden">
+          {/* Profile Header */}
+          <LinearGradient
+            colors={["#2563EB", "#1D4ED8"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ paddingHorizontal: 24, paddingVertical: 32 }}
+          >
+            <View className="items-center">
+              <Pressable
+                onPress={handleChangeAvatar}
+                disabled={uploadAvatarMutation.isPending}
+                className="relative"
+              >
+                {uploadAvatarMutation.isPending ? (
+                  <View className="w-28 h-28 rounded-full bg-white/20 items-center justify-center border-4 border-white">
+                    <ActivityIndicator size="large" color="#FFFFFF" />
+                  </View>
+                ) : profile?.image ? (
+                  <Image
+                    source={{ uri: `${S3_BASE_URL}/${profile.image}` }}
+                    className="w-28 h-28 rounded-full border-4 border-white"
+                  />
+                ) : (
+                  <View className="w-28 h-28 rounded-full bg-white items-center justify-center border-4 border-white">
+                    <User size={48} color="#2563EB" strokeWidth={2} />
+                  </View>
+                )}
+                <View className="absolute bottom-0 right-0 bg-white rounded-full p-2.5 border-4 border-blue-600">
+                  <Camera size={18} color="#2563EB" strokeWidth={2.5} />
+                </View>
+              </Pressable>
+              <Text className="text-white font-bold text-2xl mt-4">
+                {profile?.name || "User"}
+              </Text>
+              {profile?.email && (
+                <Text className="text-blue-100 text-sm mt-1">
+                  {profile.email}
+                </Text>
+              )}
+              {profile?.role && (
+                <View className="bg-white/20 px-4 py-1.5 rounded-full mt-2">
+                  <Text className="text-white text-xs font-semibold">
+                    {profile.role}
+                  </Text>
                 </View>
               )}
-              <Pressable className="absolute bottom-0 right-0 bg-blue-700 rounded-full p-2 border-2 border-white">
-                <Camera size={16} color="white" />
-              </Pressable>
             </View>
-            <Text className="text-white font-bold text-2xl mt-4">
-              {profile?.name || "User"}
-            </Text>
-          </View>
+          </LinearGradient>
 
+          {/* Profile Details */}
           <View className="p-4">
+            <Text className="text-base font-bold text-gray-900 mb-3 px-2">
+              Personal Information
+            </Text>
             <SettingItem
               icon={User}
               label="Full Name"
@@ -106,10 +432,19 @@ export default function Settings() {
             <SettingItem icon={Mail} label="Email" value={profile?.email} />
             <SettingItem
               icon={Phone}
-              label="Mobile"
+              label="Mobile Number"
               value={profile?.mobileNumber}
               field="mobileNumber"
             />
+          </View>
+        </View>
+
+        {/* Address Section */}
+        <View className="bg-white mx-4 mt-4 rounded-3xl shadow-lg overflow-hidden">
+          <View className="p-4">
+            <Text className="text-base font-bold text-gray-900 mb-3 px-2">
+              Address Details
+            </Text>
             <SettingItem
               icon={MapPin}
               label="Primary Address"
@@ -122,23 +457,72 @@ export default function Settings() {
               value={profile?.address2}
               field="address2"
             />
+            {profile?.serviceablePincodes && (
+              <SettingItem
+                icon={MapPin}
+                label="Serviceable Pincodes"
+                value={profile.serviceablePincodes.join(", ")}
+                field="serviceablePincodes"
+              />
+            )}
           </View>
         </View>
 
-        <View className="bg-white mx-4 mt-4 rounded-2xl shadow-sm">
+        {/* Actions Section */}
+        <View className="mx-4 mt-4 gap-3">
+          <Pressable className="bg-white rounded-2xl shadow-sm overflow-hidden active:opacity-80">
+            <View className="flex-row items-center p-4">
+              <View className="w-10 h-10 rounded-full bg-blue-50 items-center justify-center mr-3">
+                <SettingsIcon size={20} color="#2563EB" strokeWidth={2} />
+              </View>
+              <Text className="text-gray-900 font-semibold flex-1">
+                Settings
+              </Text>
+              <ChevronRight size={18} color="#9CA3AF" strokeWidth={2} />
+            </View>
+          </Pressable>
+
+          <Pressable className="bg-white rounded-2xl shadow-sm overflow-hidden active:opacity-80">
+            <View className="flex-row items-center p-4">
+              <View className="w-10 h-10 rounded-full bg-blue-50 items-center justify-center mr-3">
+                <HelpCircle size={20} color="#2563EB" strokeWidth={2} />
+              </View>
+              <Text className="text-gray-900 font-semibold flex-1">
+                Help & Support
+              </Text>
+              <ChevronRight size={18} color="#9CA3AF" strokeWidth={2} />
+            </View>
+          </Pressable>
+
+          {/* Logout Button */}
           <Pressable
-            onPress={async () => {
-              await logout();
-              router.replace("/(auth)/login");
-            }}
-            className="flex-row items-center p-4 active:bg-red-50"
+            onPress={handleLogout}
+            className="rounded-2xl overflow-hidden shadow-lg active:scale-[0.98]"
           >
-            <LogOut size={20} color="#EF4444" />
-            <Text className="text-red-600 font-semibold ml-3">Logout</Text>
+            <LinearGradient
+              colors={["#EF4444", "#DC2626"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                paddingVertical: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <LogOut size={20} color="#FFFFFF" strokeWidth={2.5} />
+              <Text className="text-white font-bold text-base ml-2">
+                Logout
+              </Text>
+            </LinearGradient>
           </Pressable>
         </View>
+
+        {/* Bottom Spacing */}
+        <View className="h-24" />
       </ScrollView>
 
+      {/* Edit Profile Modal */}
       <EditProfileModal
         visible={showEditModal}
         field={editField}
@@ -146,8 +530,8 @@ export default function Settings() {
         onChange={setEditValue}
         onClose={closeEditModal}
         onSave={handleSave}
-        isPending={isUpdating}
+        isPending={updateProfileMutation.isPending}
       />
-    </SafeAreaView>
+    </View>
   );
 }

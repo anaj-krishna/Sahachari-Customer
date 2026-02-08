@@ -1,7 +1,7 @@
-// This extracts the "Add to Cart" and "Buy Now" logic.
+// useProductActions.ts
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Alert, Platform, ToastAndroid } from "react-native";
-import { useQueryClient } from "@tanstack/react-query";
 import { addToCart, placeSingleOrder } from "../services/orders.api";
 
 export function useProductActions(product: any) {
@@ -9,28 +9,41 @@ export function useProductActions(product: any) {
   const [loading, setLoading] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [address, setAddress] = useState({ street: "", city: "", zipCode: "", phone: "", notes: "" });
+  const [showQuantityModal, setShowQuantityModal] = useState(false);
+  const [address, setAddress] = useState({
+    street: "",
+    city: "",
+    zipCode: "",
+    phone: "",
+    notes: "",
+  });
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (quantity: number) => {
     setLoading(true);
     try {
-      await addToCart({ productId: product.id, quantity: 1 });
+      await addToCart({ productId: product.id, quantity });
       await queryClient.invalidateQueries({ queryKey: ["cart"] });
-      
+
       if (Platform.OS === "android") {
-        ToastAndroid.show("Added to cart", ToastAndroid.SHORT);
+        ToastAndroid.show(
+          `Added ${quantity} item(s) to cart`,
+          ToastAndroid.SHORT,
+        );
       } else {
-        Alert.alert("Success", "Added to cart");
+        Alert.alert("Success", `Added ${quantity} item(s) to cart`);
       }
+
+      return true; // Success indicator
     } catch (err) {
       console.error("Add to cart error:", err);
       Alert.alert("Error", "Failed to add to cart");
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = async (quantity: number) => {
     if (!address.street || address.street.length < 5 || !address.phone) {
       Alert.alert("Error", "Please fill valid delivery details");
       return;
@@ -40,7 +53,7 @@ export function useProductActions(product: any) {
     try {
       await placeSingleOrder({
         productId: product.id,
-        quantity: 1,
+        quantity,
         deliveryAddress: address,
       });
       await queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -63,6 +76,8 @@ export function useProductActions(product: any) {
     setShowAddressModal,
     showSuccessModal,
     setShowSuccessModal,
+    showQuantityModal,
+    setShowQuantityModal,
     handleAddToCart,
     handleBuyNow,
   };

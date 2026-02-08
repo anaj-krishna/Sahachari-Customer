@@ -14,7 +14,7 @@
       "buildNumber": "19"
     },
     "android": {
-      "package": "com.yourname.customers", 
+      "package": "com.corestoneinnovation.sahachariuser", 
       "versionCode": 19,
       "adaptiveIcon": {
         "foregroundImage": "./assets/sahachari.jpeg",

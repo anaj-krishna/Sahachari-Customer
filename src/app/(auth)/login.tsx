@@ -29,7 +29,7 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout title="SAHACHARI">
+    <AuthLayout title="LOGIN">
       <AuthInput
         placeholder="Email"
         autoCapitalize="none"

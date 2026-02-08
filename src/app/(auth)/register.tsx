@@ -16,8 +16,6 @@ export default function Register() {
     name: "",
     email: "",
     address: "",
-    address2: "",
-    mobileNumber: "",
     password: "",
     pincodesInput: "",
   });
@@ -51,8 +49,6 @@ export default function Register() {
         name: form.name,
         email: form.email,
         address: form.address,
-        address2: form.address2 || undefined,
-        mobileNumber: form.mobileNumber || undefined,
         serviceablePincodes,
         password: form.password,
         role: Role.USER,
@@ -68,7 +64,7 @@ export default function Register() {
   };
 
   return (
-    <AuthLayout title="SAHACHARI - Register">
+    <AuthLayout title="REGISTER">
       <AuthInput
         placeholder="Full Name"
         onChangeText={(v) => setForm({ ...form, name: v })}
@@ -86,16 +82,6 @@ export default function Register() {
         onChangeText={(v) => setForm({ ...form, address: v })}
       />
 
-      <AuthInput
-        placeholder="Address Line 2 (optional)"
-        onChangeText={(v) => setForm({ ...form, address2: v })}
-      />
-
-      <AuthInput
-        placeholder="Mobile Number (optional)"
-        keyboardType="phone-pad"
-        onChangeText={(v) => setForm({ ...form, mobileNumber: v })}
-      />
 
       <AuthInput
         placeholder="Serviceable Pincodes (comma separated)"
