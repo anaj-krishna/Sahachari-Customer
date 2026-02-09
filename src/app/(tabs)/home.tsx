@@ -11,7 +11,7 @@ import {
   Sparkles,
   User,
   Wrench,
-  Zap,
+  Zap
 } from "lucide-react-native";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -31,7 +31,8 @@ import { useProfile } from "../../hooks/useProfile";
 
 const { width } = Dimensions.get("window");
 const CAROUSEL_IMAGES = [
-  require("../../../assets/im4.jpg"),
+  require("../../../assets/SAHACHARIIMAGE.png"),
+  require("../../../assets/pexels-jack-sparrow-4198972.jpg"),
   require("../../../assets/im3.jpg"),
 ];
 
@@ -49,47 +50,57 @@ const CATEGORY_ICONS: Record<string, any> = {
   "default": Package,
 };
 
-// Color gradients for different categories
-const CATEGORY_GRADIENTS: Record<string, { gradient: string[], iconColor: string }> = {
+// Premium white and blue color gradients
+const CATEGORY_GRADIENTS: Record<string, { gradient: string[], iconColor: string, shadowColor: string }> = {
   "Milk": {
-    gradient: ["#E0F2FE", "#DBEAFE"],
-    iconColor: "#0284C7",
+    gradient: ["#FFFFFF", "#EFF6FF"],
+    iconColor: "#1E40AF",
+    shadowColor: "#3B82F6",
   },
   "Vegetable": {
-    gradient: ["#DCFCE7", "#D1FAE5"],
-    iconColor: "#059669",
+    gradient: ["#FFFFFF", "#DBEAFE"],
+    iconColor: "#2563EB",
+    shadowColor: "#60A5FA",
   },
   "Vegetables": {
-    gradient: ["#DCFCE7", "#D1FAE5"],
-    iconColor: "#059669",
+    gradient: ["#FFFFFF", "#DBEAFE"],
+    iconColor: "#2563EB",
+    shadowColor: "#60A5FA",
   },
   "Electrician": {
-    gradient: ["#FEF3C7", "#FDE68A"],
-    iconColor: "#D97706",
+    gradient: ["#FFFFFF", "#BFDBFE"],
+    iconColor: "#1D4ED8",
+    shadowColor: "#3B82F6",
   },
   "Mechanic": {
-    gradient: ["#E0E7FF", "#C7D2FE"],
-    iconColor: "#4F46E5",
+    gradient: ["#FFFFFF", "#E0E7FF"],
+    iconColor: "#4338CA",
+    shadowColor: "#6366F1",
   },
   "Plumber": {
-    gradient: ["#FCE7F3", "#FBCFE8"],
-    iconColor: "#DB2777",
+    gradient: ["#FFFFFF", "#DBEAFE"],
+    iconColor: "#1E3A8A",
+    shadowColor: "#3B82F6",
   },
   "Plumbing": {
-    gradient: ["#FCE7F3", "#FBCFE8"],
-    iconColor: "#DB2777",
+    gradient: ["#FFFFFF", "#DBEAFE"],
+    iconColor: "#1E3A8A",
+    shadowColor: "#3B82F6",
   },
   "Cleaning": {
-    gradient: ["#FEF9C3", "#FEF08A"],
-    iconColor: "#CA8A04",
+    gradient: ["#FFFFFF", "#E0E7FF"],
+    iconColor: "#3730A3",
+    shadowColor: "#6366F1",
   },
   "Service": {
-    gradient: ["#E0E7FF", "#C7D2FE"],
-    iconColor: "#4F46E5",
+    gradient: ["#FFFFFF", "#BFDBFE"],
+    iconColor: "#1E40AF",
+    shadowColor: "#60A5FA",
   },
   "default": {
-    gradient: ["#F3F4F6", "#E5E7EB"],
-    iconColor: "#6B7280",
+    gradient: ["#FFFFFF", "#F1F5F9"],
+    iconColor: "#475569",
+    shadowColor: "#94A3B8",
   },
 };
 
@@ -112,7 +123,6 @@ export default function Home() {
     const uniqueCategories = new Set<string>();
     data.forEach((product: any) => {
       if (product.category) {
-        // Trim whitespace from category names
         const cleanCategory = product.category.trim();
         uniqueCategories.add(cleanCategory);
       }
@@ -128,6 +138,7 @@ export default function Home() {
         icon: icon,
         gradient: colors.gradient,
         iconColor: colors.iconColor,
+        shadowColor: colors.shadowColor,
       };
     });
   }, [data]);
@@ -160,67 +171,141 @@ export default function Home() {
     if (scaleAnims[index]) {
       Animated.spring(scaleAnims[index], {
         toValue: 1,
-        friction: 3,
-        tension: 40,
+        friction: 4,
+        tension: 50,
         useNativeDriver: true,
       }).start();
     }
   };
 
   const handleCategoryPress = (categoryName: string) => {
-    // Navigate to products page with category filter
     router.push({
       pathname: "/products",
       params: { category: categoryName },
     });
   };
-const S3_BASE_URL =
-  process.env.EXPO_PUBLIC_S3_BASE_URL 
+
+  const S3_BASE_URL = process.env.EXPO_PUBLIC_S3_BASE_URL;
+
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Premium Header with Gradient */}
+    <View className="flex-1" style={{ backgroundColor: "#F8FAFC" }}>
+      {/* Luxurious Blue Gradient Header */}
       <LinearGradient
-        colors={["#2563EB", "#1D4ED8"]}
+        colors={["#1E3A8A", "#2563EB", "#3B82F6"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ paddingTop: insets.top + 16, paddingBottom: 24 }}
+        style={{ paddingTop: insets.top + 24, paddingBottom: 32 }}
       >
+        {/* Decorative overlay pattern */}
+        <View 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            opacity: 0.1,
+          }}
+        >
+          <View style={{ 
+            width: 200, 
+            height: 200, 
+            borderRadius: 100, 
+            backgroundColor: 'white',
+            position: 'absolute',
+            top: -50,
+            right: -50,
+          }} />
+          <View style={{ 
+            width: 150, 
+            height: 150, 
+            borderRadius: 75, 
+            backgroundColor: 'white',
+            position: 'absolute',
+            bottom: -30,
+            left: -40,
+          }} />
+        </View>
+
         <View className="px-6">
           <View className="flex-row items-center justify-between">
             <View className="flex-1">
-              <Text className="text-3xl font-bold text-white tracking-tight">
-                Sahachari
-              </Text>
-              <Text className="text-blue-100 text-sm mt-1.5 opacity-90">
-                Your trusted local partner ✨
-              </Text>
+              <View className="flex-row items-center mb-1">
+                
+                <Text 
+                  className="text-4xl font-black text-white ml-2" 
+                  style={{ 
+                    letterSpacing: 1,
+                    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+                    textShadowOffset: { width: 0, height: 2 },
+                    textShadowRadius: 4,
+                  }}
+                >
+                  Sahachari
+                </Text>
+              </View>
+              <View className="flex-row items-center mt-1">
+                <View className="w-12 h-0.5 bg-blue-200 mr-3 rounded-full" />
+                <Text className="text-blue-50 text-sm font-semibold tracking-wide">
+                  Premium Local Services
+                </Text>
+              </View>
             </View>
 
-            {/* Premium Profile Icon with Ring */}
+            {/* Luxurious Profile Icon */}
             <Pressable
               onPress={() => router.push("/settings/settings")}
               className="relative"
             >
-              <View className="bg-white/20 rounded-full p-1 backdrop-blur-sm">
-                {profile?.image ? (
-                  <Image
-                     source={{ uri: `${S3_BASE_URL}/${profile.image}` }}
-                    className="w-12 h-12 rounded-full border-2 border-white"
-                  />
-                ) : (
-                  <View className="w-12 h-12 rounded-full bg-white items-center justify-center shadow-lg">
-                    <User size={24} color="#2563EB" strokeWidth={2} />
-                  </View>
-                )}
+              <View 
+                className="rounded-full"
+                style={{
+                  shadowColor: "#1E40AF",
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 12,
+                  elevation: 10,
+                }}
+              >
+                <LinearGradient
+                  colors={["#FFFFFF", "#EFF6FF"]}
+                  className="rounded-full p-1"
+                >
+                  {profile?.image ? (
+                    <Image
+                      source={{ uri: `${S3_BASE_URL}/${profile.image}` }}
+                      className="w-16 h-16 rounded-full"
+                      style={{
+                        borderWidth: 3,
+                        borderColor: '#FFFFFF',
+                      }}
+                    />
+                  ) : (
+                    <View 
+                      className="w-16 h-16 rounded-full items-center justify-center"
+                      style={{
+                        backgroundColor: '#FFFFFF',
+                        borderWidth: 3,
+                        borderColor: '#EFF6FF',
+                      }}
+                    >
+                      <User size={28} color="#2563EB" strokeWidth={2.5} />
+                    </View>
+                  )}
+                </LinearGradient>
               </View>
             </Pressable>
           </View>
         </View>
       </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Premium Carousel with Shadow */}
-        <View className="mt-6">
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 32 }}
+      >
+        {/* Ultra Premium Carousel */}
+        <View className="mt-8">
           <ScrollView
             ref={scrollViewRef}
             horizontal
@@ -233,22 +318,44 @@ const S3_BASE_URL =
               <View
                 key={index}
                 style={{ width }}
-                className="items-center px-4"
+                className="items-center px-6"
               >
-                <View className="rounded-3xl overflow-hidden shadow-2xl bg-white">
+                <View 
+                  className="rounded-3xl overflow-hidden bg-white"
+                  style={{
+                    shadowColor: "#2563EB",
+                    shadowOffset: { width: 0, height: 12 },
+                    shadowOpacity: 0.18,
+                    shadowRadius: 20,
+                    elevation: 15,
+                    borderWidth: 1,
+                    borderColor: '#EFF6FF',
+                  }}
+                >
                   <Image
                     source={image}
-                    style={{ width: width - 32, height: 200 }}
+                    style={{ width: width - 48, height: 220 }}
                     resizeMode="cover"
                   />
-                  {/* Gradient Overlay */}
+                  {/* Elegant overlay */}
                   <LinearGradient
-                    colors={["transparent", "rgba(0,0,0,0.1)"]}
+                    colors={["transparent", "rgba(30, 58, 138, 0.2)"]}
                     style={{
                       position: "absolute",
                       left: 0,
                       right: 0,
                       bottom: 0,
+                      height: 100,
+                    }}
+                  />
+                  {/* Top shine effect */}
+                  <LinearGradient
+                    colors={["rgba(255, 255, 255, 0.3)", "transparent"]}
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      top: 0,
                       height: 60,
                     }}
                   />
@@ -257,76 +364,127 @@ const S3_BASE_URL =
             ))}
           </ScrollView>
 
-          {/* Modern Pagination Dots */}
-          <View className="flex-row justify-center items-center mt-4">
+          {/* Luxurious Pagination Dots */}
+          <View className="flex-row justify-center items-center mt-6">
             {CAROUSEL_IMAGES.map((_, index) => (
               <View
                 key={index}
-                className={`h-2 rounded-full mx-1 transition-all ${
-                  activeSlide === index
-                    ? "bg-blue-600 w-8 shadow-sm"
-                    : "bg-gray-300 w-2"
-                }`}
+                style={{
+                  height: 8,
+                  borderRadius: 4,
+                  marginHorizontal: 5,
+                  width: activeSlide === index ? 32 : 8,
+                  backgroundColor: activeSlide === index ? "#2563EB" : "#CBD5E1",
+                  shadowColor: activeSlide === index ? "#2563EB" : "transparent",
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowOpacity: 0.4,
+                  shadowRadius: 6,
+                  elevation: activeSlide === index ? 5 : 0,
+                }}
               />
             ))}
           </View>
         </View>
 
-        {/* Premium Happy 60 Banner */}
+        {/* Luxurious Happy 60 Card */}
         <Pressable
           onPress={handleCallHappy60}
-          className="mx-4 mt-8 rounded-3xl overflow-hidden shadow-lg active:scale-[0.98]"
+          className="mx-6 mt-8"
+          style={({ pressed }) => ({
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          })}
         >
-          <LinearGradient
-            colors={["#FFFBEB", "#FEF3C7", "#FDE68A"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ padding: 20 }}
+          <View 
+            className="rounded-3xl overflow-hidden bg-white"
+            style={{
+              shadowColor: "#2563EB",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.15,
+              shadowRadius: 16,
+              elevation: 10,
+              borderWidth: 1,
+              borderColor: '#EFF6FF',
+            }}
           >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1">
-                <View className="bg-white rounded-2xl p-3 mr-4 shadow-sm">
-                  <Text className="text-3xl">😊</Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-xl font-bold text-orange-900">
+            <LinearGradient
+              colors={["#FFFFFF", "#EFF6FF", "#DBEAFE"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ padding: 24 }}
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 mr-4">
+                  <View className="flex-row items-center mb-3">
+                   
+                  </View>
+                  <Text className="text-3xl font-black text-blue-900 mb-2" style={{ letterSpacing: 0.5 }}>
                     Happy 60
                   </Text>
-                  <Text className="text-orange-700 text-sm mt-1">
-                    Special offers for senior citizens
+                  <Text className="text-blue-600 text-sm font-semibold leading-5">
+                    Exclusive for senior citizens
                   </Text>
                 </View>
+                
+                <View 
+                  className="rounded-2xl"
+                  style={{
+                    shadowColor: "#2563EB",
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 10,
+                    elevation: 8,
+                  }}
+                >
+                  <LinearGradient
+                    colors={["#3B82F6", "#2563EB", "#1D4ED8"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    className="rounded-2xl p-5"
+                  >
+                    <Phone size={26} color="#FFFFFF" strokeWidth={2.5} />
+                  </LinearGradient>
+                </View>
               </View>
-              <View className="bg-orange-600 rounded-full p-3 shadow-md">
-                <Phone size={20} color="#FFFFFF" strokeWidth={2.5} />
-              </View>
-            </View>
-          </LinearGradient>
+            </LinearGradient>
+          </View>
         </Pressable>
 
-        {/* Categories Section with Premium Header */}
-        <View className="mt-8 px-4">
-          <View className="flex-row items-center justify-between mb-5">
-            <View>
-              <Text className="text-2xl font-bold text-gray-900">
-                Categories
+        {/* Premium Categories Section */}
+        <View className="mt-10 px-6">
+          <View className="flex-row items-center justify-between mb-7">
+            <View className="flex-1">
+              <Text className="text-3xl font-black text-gray-900 tracking-tight" style={{ letterSpacing: 0.3 }}>
+                Our Services
               </Text>
-              <Text className="text-gray-500 text-sm mt-1">
-                Explore our services
-              </Text>
+              <View className="flex-row items-center mt-2">
+                <View className="w-8 h-0.5 bg-blue-500 rounded-full mr-2" />
+                <Text className="text-blue-600 text-sm font-bold tracking-wide">
+                  Discover Excellence
+                </Text>
+              </View>
             </View>
-            <ChevronRight size={24} color="#9CA3AF" strokeWidth={2} />
+            <View 
+              className="bg-blue-50 rounded-2xl p-3"
+              style={{
+                shadowColor: "#2563EB",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 6,
+              }}
+            >
+              <ChevronRight size={22} color="#2563EB" strokeWidth={2.5} />
+            </View>
           </View>
 
           {/* Loading State */}
           {isLoading && (
-            <View className="py-12 items-center">
+            <View className="py-20 items-center">
               <ActivityIndicator size="large" color="#2563EB" />
-              <Text className="text-gray-500 mt-4">Loading categories...</Text>
+              <Text className="text-blue-400 mt-6 font-semibold text-base">Loading services...</Text>
             </View>
           )}
 
-          {/* Premium Categories Grid */}
+          {/* Luxurious Categories Grid */}
           {!isLoading && categories.length > 0 && (
             <View className="flex-row flex-wrap justify-between">
               {categories.map((category, index) => {
@@ -337,7 +495,7 @@ const S3_BASE_URL =
                     style={{
                       transform: [{ scale: scaleAnims[index] || 1 }],
                       width: "48%",
-                      marginBottom: 16,
+                      marginBottom: 18,
                     }}
                   >
                     <Pressable
@@ -345,7 +503,18 @@ const S3_BASE_URL =
                       onPressIn={() => handleCategoryPressIn(index)}
                       onPressOut={() => handleCategoryPressOut(index)}
                     >
-                      <View className="rounded-3xl overflow-hidden shadow-lg bg-white">
+                      <View 
+                        className="rounded-3xl overflow-hidden"
+                        style={{
+                          shadowColor: category.shadowColor,
+                          shadowOffset: { width: 0, height: 6 },
+                          shadowOpacity: 0.15,
+                          shadowRadius: 14,
+                          elevation: 8,
+                          borderWidth: 1,
+                          borderColor: '#F1F5F9',
+                        }}
+                      >
                         <LinearGradient
                           colors={category.gradient}
                           start={{ x: 0, y: 0 }}
@@ -353,16 +522,29 @@ const S3_BASE_URL =
                           style={{ padding: 24 }}
                         >
                           <View className="items-center">
-                            <View className="bg-white rounded-2xl p-3 shadow-sm mb-3">
+                            <View 
+                              className="rounded-2xl p-4 mb-4"
+                              style={{
+                                backgroundColor: '#FFFFFF',
+                                shadowColor: category.iconColor,
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.2,
+                                shadowRadius: 8,
+                                elevation: 6,
+                                borderWidth: 1,
+                                borderColor: '#F1F5F9',
+                              }}
+                            >
                               <IconComponent
                                 size={32}
                                 color={category.iconColor}
-                                strokeWidth={2}
+                                strokeWidth={2.5}
                               />
                             </View>
                             <Text
-                              className="text-gray-800 font-bold text-base text-center"
+                              className="text-gray-900 font-black text-base text-center"
                               numberOfLines={1}
+                              style={{ letterSpacing: 0.5 }}
                             >
                               {category.name}
                             </Text>
@@ -376,19 +558,9 @@ const S3_BASE_URL =
             </View>
           )}
 
-          {/* Empty State */}
-          {!isLoading && categories.length === 0 && (
-            <View className="py-12 items-center">
-              <Package size={48} color="#9CA3AF" strokeWidth={1.5} />
-              <Text className="text-gray-500 mt-4 text-center">
-                No categories available yet
-              </Text>
-            </View>
-          )}
+          {/* Premium Empty State */}
+          
         </View>
-
-        {/* Bottom Spacing */}
-        <View className="h-12" />
       </ScrollView>
     </View>
   );
