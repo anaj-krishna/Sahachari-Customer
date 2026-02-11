@@ -11,7 +11,6 @@ import {
   Plus,
   Share2,
   ShoppingCart,
-  Tag,
   XCircle
 } from "lucide-react-native";
 import { useRef, useState } from "react";
@@ -66,6 +65,9 @@ export default function ProductDetails() {
   const scrollViewRef = useRef<ScrollView>(null);
   const heartScaleAnim = useRef(new Animated.Value(1)).current;
 
+  // Check if product is a service
+  const isService = product?.category === "Service";
+
   const handleImageScroll = (event: any) => {
     const slideSize = event.nativeEvent.layoutMeasurement.width;
     const offset = event.nativeEvent.contentOffset.x;
@@ -99,7 +101,7 @@ export default function ProductDetails() {
   const handleShareProduct = async () => {
     try {
       await Share.share({
-        message: `Check out ${product?.name} - ₹${finalPrice}`,
+        message: `Check out ${product?.name} - ₹${finalPrice}${isService ? ' per hour' : ''}`,
       });
     } catch (error) {
       console.log(error);
@@ -119,7 +121,16 @@ export default function ProductDetails() {
   };
 
   const handleAddToCartClick = () => {
-    setShowQuantityModal(true);
+    // For services, automatically use quantity 1
+    if (isService) {
+      handleAddToCart(1).then((success) => {
+        if (success) {
+          router.push("/(tabs)/cart");
+        }
+      });
+    } else {
+      setShowQuantityModal(true);
+    }
   };
 
   const handleAddToCartConfirm = async (selectedQuantity: number) => {
@@ -139,7 +150,7 @@ export default function ProductDetails() {
     return (
       <View className="flex-1 bg-gray-50 items-center justify-center">
         <ActivityIndicator size="large" color="#2563EB" />
-        <Text className="text-gray-500 mt-4 font-medium">Loading product...</Text>
+        <Text className="text-gray-500 mt-4 font-medium">Loading {isService ? 'service' : 'product'}...</Text>
       </View>
     );
   }
@@ -150,7 +161,7 @@ export default function ProductDetails() {
         <View className="bg-white rounded-3xl p-8 items-center shadow-lg">
           <Text className="text-6xl mb-4">😔</Text>
           <Text className="text-xl font-bold text-gray-900 mb-2">
-            Unable to load product
+            Unable to load {isService ? 'service' : 'product'}
           </Text>
           <Text className="text-gray-500 text-center mb-6">
             Something went wrong. Please try again.
@@ -271,6 +282,31 @@ export default function ProductDetails() {
             </View>
           )}
 
+          {/* Service Badge on Image */}
+          {isService && (
+            <View className="absolute top-6 left-6">
+              <LinearGradient
+                colors={["#3B82F6", "#2563EB"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 16,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 5,
+                }}
+              >
+                <Text className="text-white text-lg font-bold">
+                  Service
+                </Text>
+              </LinearGradient>
+            </View>
+          )}
+
           {/* Image Indicators */}
           {product.images && product.images.length > 1 && (
             <View className="absolute bottom-6 right-6 flex-row gap-2">
@@ -313,16 +349,6 @@ export default function ProductDetails() {
 
         {/* Product Info */}
         <View className="px-6 pt-6">
-          {/* Category Badge */}
-          {product.category && (
-            <View className="flex-row items-center mb-3">
-              <Tag size={16} color="#3B82F6" strokeWidth={2} />
-              <Text className="text-blue-600 font-semibold ml-1.5">
-                {product.category}
-              </Text>
-            </View>
-          )}
-
           {/* Product Name */}
           <Text className="text-3xl font-bold text-gray-900 leading-tight">
             {product.name}
@@ -332,52 +358,71 @@ export default function ProductDetails() {
           <View className="mt-6 bg-blue-50 rounded-3xl p-5">
             <View className="flex-row items-center justify-between">
               <View className="flex-1">
-                <Text className="text-gray-600 text-sm mb-1">Price</Text>
+                <Text className="text-gray-600 text-sm mb-1">
+                  {isService ? 'Rate' : 'Price'}
+                </Text>
                 <View className="flex-row items-baseline">
                   <Text className="text-4xl font-bold text-blue-600">
                     ₹{finalPrice}
                   </Text>
-                  {hasDiscount && (
+                  {isService && (
+                    <Text className="text-lg text-gray-600 ml-2">
+                      per hour
+                    </Text>
+                  )}
+                  {!isService && hasDiscount && (
                     <Text className="text-xl text-gray-400 line-through ml-3">
                       ₹{originalPrice}
                     </Text>
                   )}
                 </View>
-                {hasDiscount && (
+                {!isService && hasDiscount && (
                   <Text className="text-green-600 font-semibold mt-1">
                     You save ₹{(originalPrice - finalPrice).toFixed(2)}
                   </Text>
                 )}
               </View>
 
-              {/* Stock Status */}
-              <View>
-                {product.quantity && product.quantity > 0 ? (
-                  <View className="bg-green-100 px-4 py-2 rounded-full flex-row items-center">
-                    <CheckCircle size={18} color="#16A34A" strokeWidth={2.5} />
-                    <Text className="text-green-700 font-bold ml-2">
-                      In Stock
+              {/* Stock Status - Only for Products */}
+              {!isService && (
+                <View>
+                  {product.quantity && product.quantity > 0 ? (
+                    <View className="bg-green-100 px-4 py-2 rounded-full flex-row items-center">
+                      <CheckCircle size={18} color="#16A34A" strokeWidth={2.5} />
+                      <Text className="text-green-700 font-bold ml-2">
+                        In Stock
+                      </Text>
+                    </View>
+                  ) : (
+                    <View className="bg-red-100 px-4 py-2 rounded-full flex-row items-center">
+                      <XCircle size={18} color="#DC2626" strokeWidth={2.5} />
+                      <Text className="text-red-700 font-bold ml-2">
+                        Out of Stock
+                      </Text>
+                    </View>
+                  )}
+                  {product.quantity && product.quantity > 0 && (
+                    <Text className="text-gray-500 text-sm mt-2 text-right">
+                      {product.quantity} units available
                     </Text>
-                  </View>
-                ) : (
-                  <View className="bg-red-100 px-4 py-2 rounded-full flex-row items-center">
-                    <XCircle size={18} color="#DC2626" strokeWidth={2.5} />
-                    <Text className="text-red-700 font-bold ml-2">
-                      Out of Stock
-                    </Text>
-                  </View>
-                )}
-                {product.quantity && product.quantity > 0 && (
-                  <Text className="text-gray-500 text-sm mt-2 text-right">
-                    {product.quantity} units available
+                  )}
+                </View>
+              )}
+
+              {/* Service Availability Badge */}
+              {isService && (
+                <View className="bg-green-100 px-4 py-2 rounded-full flex-row items-center">
+                  <CheckCircle size={18} color="#16A34A" strokeWidth={2.5} />
+                  <Text className="text-green-700 font-bold ml-2">
+                    Available
                   </Text>
-                )}
-              </View>
+                </View>
+              )}
             </View>
           </View>
 
-          {/* Quantity Selector for Buy Now */}
-          {product.quantity && product.quantity > 0 && (
+          {/* Quantity Selector - Only for Products with Buy Now */}
+          {!isService && product.quantity && product.quantity > 0 && (
             <View className="mt-6">
               <Text className="text-lg font-bold text-gray-900 mb-3">
                 Quantity (for Buy Now)
@@ -429,7 +474,8 @@ export default function ProductDetails() {
       </ScrollView>
 
       {/* Floating Action Buttons */}
-      {product.quantity && product.quantity > 0 && (
+      {/* Show for services (always available) or products with stock */}
+      {(isService || (product.quantity && product.quantity > 0)) && (
         <View
           className="absolute bottom-0 left-0 right-0 px-6 bg-white border-t border-gray-100"
           style={{
@@ -482,7 +528,7 @@ export default function ProductDetails() {
                   <>
                     <Package size={20} color="#FFFFFF" strokeWidth={2.5} />
                     <Text className="text-white font-bold text-base ml-2">
-                      Buy Now
+                      {isService ? 'Book Now' : 'Buy Now'}
                     </Text>
                   </>
                 )}
@@ -492,19 +538,21 @@ export default function ProductDetails() {
         </View>
       )}
 
-      {/* Add to Cart Modal */}
-      <AddToCartModal
-        visible={showQuantityModal}
-        onClose={() => setShowQuantityModal(false)}
-        onConfirm={handleAddToCartConfirm}
-        product={{
-          name: product.name,
-          finalPrice: finalPrice,
-          quantity: product.quantity || 0,
-          images: product.images,
-        }}
-        isPending={loading}
-      />
+      {/* Add to Cart Modal - Only for Products */}
+      {!isService && (
+        <AddToCartModal
+          visible={showQuantityModal}
+          onClose={() => setShowQuantityModal(false)}
+          onConfirm={handleAddToCartConfirm}
+          product={{
+            name: product.name,
+            finalPrice: finalPrice,
+            quantity: product.quantity || 0,
+            images: product.images,
+          }}
+          isPending={loading}
+        />
+      )}
 
       {/* Buy Now Checkout Modal */}
       <CheckoutModal
@@ -512,10 +560,10 @@ export default function ProductDetails() {
         onClose={() => setShowAddressModal(false)}
         address={address}
         setAddress={setAddress}
-        onConfirm={() => handleBuyNow(quantity)}
+        onConfirm={() => handleBuyNow(isService ? 1 : quantity)}
         isPending={loading}
-        total={totalPrice}
-        itemSCount={quantity}
+        total={isService ? finalPrice : totalPrice}
+        itemSCount={isService ? 1 : quantity}
       />
 
       {/* Success Modal */}

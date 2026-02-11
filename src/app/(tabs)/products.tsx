@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Search, ShoppingBag, Tag, X } from "lucide-react-native";
+import { ArrowLeft, Search, ShoppingBag, X } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -67,6 +67,7 @@ export default function ProductsScreen() {
   };
 
   const renderProduct = ({ item }: { item: Product }) => {
+    const isService = item.category === "Service";
     const hasDiscount = item.offers && item.offers.length > 0;
     const discountPercent = hasDiscount
       ? Math.round(((parseFloat(item.price) - item.finalPrice) / parseFloat(item.price)) * 100)
@@ -120,8 +121,28 @@ export default function ProductsScreen() {
               </View>
             )}
             
-            {/* Discount Badge */}
-            {hasDiscount && discountPercent > 0 && (
+            {/* Service Badge */}
+            {isService && (
+              <View className="absolute top-2 left-2">
+                <LinearGradient
+                  colors={["#3B82F6", "#2563EB"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                  }}
+                >
+                  <Text className="text-white text-xs font-bold">
+                    Service
+                  </Text>
+                </LinearGradient>
+              </View>
+            )}
+
+            {/* Discount Badge - Only for Products */}
+            {!isService && hasDiscount && discountPercent > 0 && (
               <View className="absolute top-2 left-2">
                 <LinearGradient
                   colors={["#EF4444", "#DC2626"]}
@@ -143,7 +164,7 @@ export default function ProductsScreen() {
 
           {/* Product Details */}
           <View className="flex-1 p-4 justify-between">
-            {/* Name and Category */}
+            {/* Name and Description */}
             <View>
               <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
                 {item.name}
@@ -151,45 +172,55 @@ export default function ProductsScreen() {
               <Text className="text-sm text-gray-500 mt-1" numberOfLines={2}>
                 {item.description}
               </Text>
-              
-              {/* Category Badge */}
-              <View className="mt-2 flex-row items-center">
-                <Tag size={12} color="#3B82F6" strokeWidth={2} />
-                <Text className="text-xs text-blue-600 font-medium ml-1">
-                  {item.category}
-                </Text>
-              </View>
             </View>
 
-            {/* Price and Stock */}
+            {/* Price and Stock/Availability */}
             <View className="mt-3">
               <View className="flex-row items-baseline">
                 <Text className="text-2xl font-bold text-blue-600">
                   ₹{item.finalPrice}
                 </Text>
-                {hasDiscount && (
+                {isService && (
+                  <Text className="text-xs text-gray-600 ml-1">
+                    /hr
+                  </Text>
+                )}
+                {!isService && hasDiscount && (
                   <Text className="text-sm text-gray-400 line-through ml-2">
                     ₹{item.price}
                   </Text>
                 )}
               </View>
 
-              {/* Stock Status */}
-              <View className="mt-2">
-                {item.quantity > 0 ? (
-                  <View className="bg-green-50 self-start px-3 py-1 rounded-full">
-                    <Text className="text-xs text-green-700 font-semibold">
-                      ✓ In Stock ({item.quantity})
+              {/* Stock Status - Only for Products */}
+              {!isService && (
+                <View className="mt-2">
+                  {item.quantity > 0 ? (
+                    <View className="bg-green-50 self-start px-3 py-1 rounded-full">
+                      <Text className="text-xs text-green-700 font-semibold">
+                        ✓ In Stock ({item.quantity})
+                      </Text>
+                    </View>
+                  ) : (
+                    <View className="bg-red-50 self-start px-3 py-1 rounded-full">
+                      <Text className="text-xs text-red-700 font-semibold">
+                        ✗ Out of Stock
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Availability Badge - Only for Services */}
+              {isService && (
+                <View className="mt-2">
+                  <View className="bg-blue-50 self-start px-3 py-1 rounded-full">
+                    <Text className="text-xs text-blue-700 font-semibold">
+                      ✓ Available
                     </Text>
                   </View>
-                ) : (
-                  <View className="bg-red-50 self-start px-3 py-1 rounded-full">
-                    <Text className="text-xs text-red-700 font-semibold">
-                      ✗ Out of Stock
-                    </Text>
-                  </View>
-                )}
-              </View>
+                </View>
+              )}
             </View>
           </View>
         </View>

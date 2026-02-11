@@ -31,7 +31,9 @@ import { useProfile } from "../../hooks/useProfile";
 
 const { width } = Dimensions.get("window");
 const CAROUSEL_IMAGES = [
-  require("../../../assets/SAHACHARIIMAGE.png"),
+  require("../../../assets/WhatsApp Image 2026-02-11 at 10.13.48 AM.jpeg"),
+  require("../../../assets/WhatsApp Image 2026-02-11 at 5.19.25 PM.jpeg"),
+  require("../../../assets/WhatsApp Image 2026-02-11 at 11.25.36 AM.jpeg"),
   require("../../../assets/pexels-jack-sparrow-4198972.jpg"),
   require("../../../assets/im3.jpg"),
 ];
@@ -52,51 +54,58 @@ const CATEGORY_ICONS: Record<string, any> = {
 
 // Premium white and blue color gradients
 const CATEGORY_GRADIENTS: Record<string, { gradient: string[], iconColor: string, shadowColor: string }> = {
+  // Fresh Greens for Produce
   "Milk": {
-    gradient: ["#FFFFFF", "#EFF6FF"],
-    iconColor: "#1E40AF",
-    shadowColor: "#3B82F6",
+    gradient: ["#FFFFFF", "#F0F9FF"], // Soft Blue/White
+    iconColor: "#0369A1",
+    shadowColor: "#7DD3FC",
   },
   "Vegetable": {
-    gradient: ["#FFFFFF", "#DBEAFE"],
-    iconColor: "#2563EB",
-    shadowColor: "#60A5FA",
+    gradient: ["#FFFFFF", "#F0FDF4"], // Soft Green
+    iconColor: "#15803D",
+    shadowColor: "#86EFAC",
   },
   "Vegetables": {
-    gradient: ["#FFFFFF", "#DBEAFE"],
-    iconColor: "#2563EB",
-    shadowColor: "#60A5FA",
+    gradient: ["#FFFFFF", "#F0FDF4"],
+    iconColor: "#15803D",
+    shadowColor: "#86EFAC",
   },
+
+  // Professional/Technical Services
   "Electrician": {
-    gradient: ["#FFFFFF", "#BFDBFE"],
-    iconColor: "#1D4ED8",
-    shadowColor: "#3B82F6",
+    gradient: ["#FFFFFF", "#FFFBEB"], // Warm Yellow/Amber
+    iconColor: "#B45309",
+    shadowColor: "#FCD34D",
   },
   "Mechanic": {
-    gradient: ["#FFFFFF", "#E0E7FF"],
-    iconColor: "#4338CA",
-    shadowColor: "#6366F1",
+    gradient: ["#FFFFFF", "#F8FAFC"], // Steel Grey
+    iconColor: "#334155",
+    shadowColor: "#CBD5E1",
   },
   "Plumber": {
-    gradient: ["#FFFFFF", "#DBEAFE"],
-    iconColor: "#1E3A8A",
-    shadowColor: "#3B82F6",
+    gradient: ["#FFFFFF", "#EFF6FF"], // Water Blue
+    iconColor: "#1D4ED8",
+    shadowColor: "#93C5FD",
   },
   "Plumbing": {
-    gradient: ["#FFFFFF", "#DBEAFE"],
-    iconColor: "#1E3A8A",
-    shadowColor: "#3B82F6",
+    gradient: ["#FFFFFF", "#EFF6FF"],
+    iconColor: "#1D4ED8",
+    shadowColor: "#93C5FD",
   },
+  
+  // High-Energy/Active Services
   "Cleaning": {
-    gradient: ["#FFFFFF", "#E0E7FF"],
-    iconColor: "#3730A3",
-    shadowColor: "#6366F1",
+    gradient: ["#FFFFFF", "#FAF5FF"], // Purple
+    iconColor: "#7E22CE",
+    shadowColor: "#D8B4FE",
   },
   "Service": {
-    gradient: ["#FFFFFF", "#BFDBFE"],
-    iconColor: "#1E40AF",
-    shadowColor: "#60A5FA",
+    gradient: ["#FFFFFF", "#ECFEFF"], // Cyan/Teal
+    iconColor: "#0E7490",
+    shadowColor: "#67E8F9",
   },
+
+  // Fallback
   "default": {
     gradient: ["#FFFFFF", "#F1F5F9"],
     iconColor: "#475569",
@@ -332,11 +341,13 @@ export default function Home() {
                     borderColor: '#EFF6FF',
                   }}
                 >
-                  <Image
-                    source={image}
-                    style={{ width: width - 48, height: 220 }}
-                    resizeMode="cover"
-                  />
+                 <Image
+  source={image}
+  // Keep your dimensions
+  style={{ width: width - 48, height: 220 }} 
+  // CHANGE THIS LINE:
+  resizeMode="contain" 
+/>
                   {/* Elegant overlay */}
                   <LinearGradient
                     colors={["transparent", "rgba(30, 58, 138, 0.2)"]}
