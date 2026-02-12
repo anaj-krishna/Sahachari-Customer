@@ -9,12 +9,10 @@ interface Store {
   isVerified: boolean;
   image: string;
 }
-
 interface CategoryStoresResponse {
   stores: Store[];
   category: string;
 }
-
 // Hook to fetch stores by category
 export const useCategoryStores = (category: string | undefined, token: string | undefined) => {
   return useQuery({
@@ -23,7 +21,7 @@ export const useCategoryStores = (category: string | undefined, token: string | 
       if (!category) return [];
       
       const response = await fetch(
-        `http://localhost:3000/customer/category/${category}/stores`,
+        `${process.env.EXPO_PUBLIC_API_URL}/customer/category/${category}/stores`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -34,7 +32,6 @@ export const useCategoryStores = (category: string | undefined, token: string | 
       if (!response.ok) {
         throw new Error('Failed to fetch category stores');
       }
-      
       const data: CategoryStoresResponse[] = await response.json();
       
       // Return stores array from first element

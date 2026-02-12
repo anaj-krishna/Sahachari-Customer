@@ -25,7 +25,7 @@ export const useStoreProducts = (storeId: string | undefined) => {
       if (!storeId) return [];
       
       const response = await fetch(
-        `http://localhost:3000/customer/stores/${storeId}/products`,
+        `${process.env.EXPO_PUBLIC_API_URL}/customer/stores/${storeId}/products`,
         {
           headers: {
             'Authorization': `Bearer ${token}`, // Replace with actual token
