@@ -14,26 +14,34 @@
       "buildNumber": "19"
     },
     "android": {
-      "package": "com.corestoneinnovation.sahachariuser", 
-      "versionCode": 19,
+      "package": "com.corestoneinnovation.sahachariuser",
+      "versionCode": 20,
       "adaptiveIcon": {
         "foregroundImage": "./assets/sahachari.jpeg",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0A4FD6"
       }
     },
     "splash": {
       "image": "./assets/sahachari.jpeg",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0A4FD6"
     },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/sahachari.jpeg"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d077b4c4-210f-4a09-b6b5-c61025918d4d"
+      }
     }
   }
 }

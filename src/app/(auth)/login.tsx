@@ -1,66 +1,182 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text } from "react-native";
-import { useLogin } from "../../hooks/useAuth";
-
-import { AuthButton } from "@/components/auth/AuthButton";
-import { AuthError } from "@/components/auth/AuthError";
-import { AuthInput } from "@/components/auth/AuthInput";
-import { AuthLayout } from "@/components/auth/AuthLayout";
+import { 
+  Pressable, 
+  Text, 
+  View, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  TouchableOpacity
+} from "react-native";
 
 export default function Login() {
-  const login = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const submit = () => {
-    login.mutate(
-      { email, password },
-      {
-        onSuccess: () => router.replace("/(tabs)/home"),
-        onError: (err: any) =>
-          setErrorMsg(
-            err?.response?.data?.message ||
-              "Invalid credentials or server error",
-          ),
-      },
-    );
+  const submit = async () => {
+    setIsLoading(true);
+    setErrorMsg(null);
+    
+    try {
+      // Replace this with your actual login API call
+      const response = await fetch("YOUR_API_ENDPOINT/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data?.message || "Invalid credentials or server error");
+      }
+
+      // Success - navigate to home
+      router.replace("/(tabs)/home");
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Invalid credentials or server error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <AuthLayout title="LOGIN">
-      <AuthInput
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        onChangeText={(v: any) => {
-          setEmail(v);
-          setErrorMsg(null);
-        }}
-      />
-
-      <AuthInput
-        placeholder="Password"
-        secureTextEntry
-        onChangeText={(v: any) => {
-          setPassword(v);
-          setErrorMsg(null);
-        }}
-      />
-
-      <AuthButton title="Log In" loading={login.isPending} onPress={submit} />
-
-      <AuthError message={errorMsg} />
-
-      <Pressable
-        onPress={() => router.push("/(auth)/register")}
-        className="mt-6"
+    <View className="flex-1 bg-white">
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
       >
-        <Text className="text-blue-600 text-center">
-          No account yet? Create one!
-        </Text>
-      </Pressable>
-    </AuthLayout>
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="flex-1 justify-center px-6 py-8">
+            {/* Premium Header */}
+            <View className="items-center mb-12">
+              {/* Accent Line */}
+              <View className="w-16 h-1 bg-blue-600 mb-10 rounded-full" />
+              
+              {/* Title */}
+              <Text className="text-[42px] font-bold text-gray-900 mb-3 tracking-tight">
+                Welcome Back
+              </Text>
+              
+              {/* Subtitle */}
+              <Text className="text-base text-gray-500 text-center font-normal">
+                Sign in to access your account
+              </Text>
+            </View>
+
+            {/* Form Section */}
+            <View className="mb-6">
+              {/* Email Input */}
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-gray-700 mb-2 ml-1">
+                  Email
+                </Text>
+                <TextInput
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-base text-gray-900"
+                  placeholder="Enter your email"
+                  placeholderTextColor="#9CA3AF"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={(v: string) => {
+                    setEmail(v);
+                    setErrorMsg(null);
+                  }}
+                />
+              </View>
+
+              {/* Password Input */}
+              <View className="mb-2">
+                <View className="flex-row justify-between items-center mb-2">
+                  <Text className="text-sm font-semibold text-gray-700 ml-1">
+                    Password
+                  </Text>
+                
+                </View>
+                <TextInput
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-base text-gray-900"
+                  placeholder="Enter your password"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={(v: string) => {
+                    setPassword(v);
+                    setErrorMsg(null);
+                  }}
+                />
+              </View>
+            </View>
+
+            {/* Error Message */}
+            {errorMsg && (
+              <View className="mb-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <Text className="text-red-600 text-sm font-medium">
+                  {errorMsg}
+                </Text>
+              </View>
+            )}
+
+            {/* Login Button */}
+            <View className="mb-8">
+              <TouchableOpacity
+                className={`rounded-xl py-4 items-center justify-center ${
+                  isLoading ? 'bg-blue-400' : 'bg-blue-600'
+                }`}
+                onPress={submit}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text className="text-white text-base font-semibold">
+                    Sign In
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Divider */}
+            <View className="flex-row items-center mb-8">
+              <View className="flex-1 h-px bg-gray-200" />
+              <Text className="px-4 text-sm text-gray-400 font-medium">
+                or
+              </Text>
+              <View className="flex-1 h-px bg-gray-200" />
+            </View>
+
+            {/* Sign Up Section */}
+            <View className="items-center">
+              <View className="flex-row items-center">
+                <Text className="text-gray-600 text-base">
+                  Do not have an account?{" "}
+                </Text>
+                <Pressable
+                  onPress={() => router.push("/(auth)/register")}
+                  className="active:opacity-70"
+                >
+                  <Text className="text-blue-600 font-semibold text-base">
+                    Sign Up
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Bottom Spacing */}
+            <View className="h-8" />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }

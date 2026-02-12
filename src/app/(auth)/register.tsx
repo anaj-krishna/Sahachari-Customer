@@ -1,14 +1,20 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text } from "react-native";
+import {
+  Pressable,
+  Text,
+  View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
 
 import { useRegister } from "../../hooks/useAuth";
 import { Role } from "../../types/user";
 
-import { AuthButton } from "@/components/auth/AuthButton";
-import { AuthError } from "@/components/auth/AuthError";
-import { AuthInput } from "@/components/auth/AuthInput";
-import { AuthLayout } from "@/components/auth/AuthLayout";
 export default function Register() {
   const register = useRegister();
 
@@ -64,50 +70,172 @@ export default function Register() {
   };
 
   return (
-    <AuthLayout title="REGISTER">
-      <AuthInput
-        placeholder="Full Name"
-        onChangeText={(v) => setForm({ ...form, name: v })}
-      />
+    <View className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="flex-1 justify-center px-6 py-8">
+            {/* Compact Header */}
+            <View className="items-center mb-8">
+              <View className="w-12 h-1 bg-blue-600 mb-6 rounded-full" />
+              <Text className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+                Create Account
+              </Text>
+              <Text className="text-sm text-gray-500 text-center">
+                Sign up to get started
+              </Text>
+            </View>
 
-      <AuthInput
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        onChangeText={(v) => setForm({ ...form, email: v })}
-      />
+            {/* Form Fields */}
+            <View className="mb-6 space-y-4">
+              {/* Full Name */}
+              <View>
+                <Text className="text-xs font-semibold text-gray-700 mb-1.5 ml-1">
+                  Full Name
+                </Text>
+                <TextInput
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-base text-gray-900"
+                  placeholder="Enter your full name"
+                  placeholderTextColor="#9CA3AF"
+                  value={form.name}
+                  onChangeText={(v) => {
+                    setForm({ ...form, name: v });
+                    setErrorMsg(null);
+                  }}
+                />
+              </View>
 
-      <AuthInput
-        placeholder="Address / Delivery Address"
-        onChangeText={(v) => setForm({ ...form, address: v })}
-      />
+              {/* Email */}
+              <View>
+                <Text className="text-xs font-semibold text-gray-700 mb-1.5 ml-1">
+                  Email
+                </Text>
+                <TextInput
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-base text-gray-900"
+                  placeholder="Enter your email"
+                  placeholderTextColor="#9CA3AF"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  value={form.email}
+                  onChangeText={(v) => {
+                    setForm({ ...form, email: v });
+                    setErrorMsg(null);
+                  }}
+                />
+              </View>
 
+              {/* Address */}
+              <View>
+                <Text className="text-xs font-semibold text-gray-700 mb-1.5 ml-1">
+                  Delivery Address
+                </Text>
+                <TextInput
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-base text-gray-900"
+                  placeholder="Enter your delivery address"
+                  placeholderTextColor="#9CA3AF"
+                  value={form.address}
+                  onChangeText={(v) => {
+                    setForm({ ...form, address: v });
+                    setErrorMsg(null);
+                  }}
+                />
+              </View>
 
-      <AuthInput
-        placeholder="Serviceable Pincodes (comma separated)"
-        keyboardType="numeric"
-        onChangeText={(v) => setForm({ ...form, pincodesInput: v })}
-      />
+              {/* Pincodes */}
+              <View>
+                <Text className="text-xs font-semibold text-gray-700 mb-1.5 ml-1">
+                  Serviceable Pincodes
+                </Text>
+                <TextInput
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-base text-gray-900"
+                  placeholder="e.g., 110001, 110002"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numeric"
+                  value={form.pincodesInput}
+                  onChangeText={(v) => {
+                    setForm({ ...form, pincodesInput: v });
+                    setErrorMsg(null);
+                  }}
+                />
+                <Text className="text-[10px] text-gray-400 mt-1 ml-1">
+                  Comma separated 6-digit codes
+                </Text>
+              </View>
 
-      <AuthInput
-        placeholder="Password"
-        secureTextEntry
-        onChangeText={(v) => setForm({ ...form, password: v })}
-      />
+              {/* Password */}
+              <View>
+                <Text className="text-xs font-semibold text-gray-700 mb-1.5 ml-1">
+                  Password
+                </Text>
+                <TextInput
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-base text-gray-900"
+                  placeholder="Create a password"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry
+                  value={form.password}
+                  onChangeText={(v) => {
+                    setForm({ ...form, password: v });
+                    setErrorMsg(null);
+                  }}
+                />
+              </View>
+            </View>
 
-      <AuthButton
-        title="Create Account"
-        loading={register.isPending}
-        onPress={submit}
-      />
+            {/* Error Message */}
+            {errorMsg && (
+              <View className="mb-5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <Text className="text-red-600 text-sm font-medium">
+                  {errorMsg}
+                </Text>
+              </View>
+            )}
 
-      <AuthError message={errorMsg} />
+            {/* Register Button */}
+            <TouchableOpacity
+              className={`rounded-xl py-4 items-center justify-center ${
+                register.isPending ? "bg-blue-400" : "bg-blue-600"
+              }`}
+              onPress={submit}
+              disabled={register.isPending}
+              activeOpacity={0.8}
+            >
+              {register.isPending ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text className="text-white text-base font-semibold">
+                  Create Account
+                </Text>
+              )}
+            </TouchableOpacity>
 
-      <Pressable className="mt-6" onPress={() => router.push("/(auth)/login")}>
-        <Text className="text-blue-600 text-center">
-          Already have an account? Log In
-        </Text>
-      </Pressable>
-    </AuthLayout>
+            {/* Divider */}
+            <View className="flex-row items-center my-6">
+              <View className="flex-1 h-px bg-gray-200" />
+              <Text className="px-4 text-xs text-gray-400 font-medium">or</Text>
+              <View className="flex-1 h-px bg-gray-200" />
+            </View>
+
+            {/* Login Link */}
+            <View className="items-center">
+              <Pressable
+                onPress={() => router.push("/(auth)/login")}
+                className="active:opacity-70"
+              >
+                <Text className="text-gray-600 text-sm">
+                  Already have an account?{" "}
+                  <Text className="text-blue-600 font-semibold">Log In</Text>
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
