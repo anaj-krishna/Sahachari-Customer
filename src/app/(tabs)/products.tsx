@@ -1,7 +1,8 @@
+import { useAuthStore } from "@/store/auth.store";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Search, ShoppingBag, X } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { ArrowLeft, Search, ShoppingBag, Store, X } from "lucide-react-native";
+import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -12,49 +13,77 @@ import {
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCategoryStores } from "../../hooks/Usecategorystores";
 import { useProducts } from "../../hooks/useProducts";
+import { useStoreProducts } from "../../hooks/useStoreProducts";
+interface Store {
+  _id: string;
+  name: string;
+  email: string;
+  address: string;
+  status: string;
+  isVerified: boolean;
+  image: string;
+}
 
 interface Product {
-  id: string;
+  _id?: string;
+  id?: string;
   name: string;
   description: string;
   category: string;
   price: string;
-  finalPrice: number;
+  finalPrice?: number;
   images: string[];
   quantity: number;
   offers: any[];
+  storeId?: string;
 }
+
+
 
 export default function ProductsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const categoryFilter = params.category as string | undefined;
+  const storeId = params.storeId as string | undefined;
 
   const [searchQuery, setSearchQuery] = useState("");
-  const { data, isLoading } = useProducts(
-    searchQuery ? { search: searchQuery } : undefined
+  const { token } = useAuthStore();
+  // Your auth token - replace with actual token from your auth system
+  const AUTH_TOKEN = token 
+  const S3_BASE_URL = process.env.EXPO_PUBLIC_S3_BASE_URL
+  // Fetch category stores when category is provided but no storeId
+  const { data: stores = [], isLoading: isLoadingStores } = useCategoryStores(
+    categoryFilter && !storeId ? categoryFilter : undefined,
+    AUTH_TOKEN
   );
 
-  // Filter products by category if category parameter is provided
-  const filteredProducts = useMemo(() => {
-    if (!data) return [];
-    
-    let products = data;
+  // Fetch products by storeId if provided, otherwise fetch all products
+  const { data: allProducts, isLoading: isLoadingAllProducts } = useProducts(
+    searchQuery ? { search: searchQuery } : undefined
+  );
+  
+  const { data: storeProducts, isLoading: isLoadingStoreProducts } = useStoreProducts(storeId);
 
-    // Filter by category if provided
-    if (categoryFilter) {
-      products = products.filter(
-        (product: Product) => 
-          product.category?.trim().toLowerCase() === categoryFilter.trim().toLowerCase()
-      );
-    }
+  // Determine which products to show
+  const displayProducts = storeId ? storeProducts : allProducts;
+  const isLoadingProducts = storeId ? isLoadingStoreProducts : isLoadingAllProducts;
 
-    return products;
-  }, [data, categoryFilter]);
+  const handleStorePress = (selectedStoreId: string) => {
+    router.push({
+      pathname: "/products",
+      params: { 
+        category: categoryFilter,
+        storeId: selectedStoreId 
+      }
+    } as any);
+  };
 
-  const handleProductPress = (productId: string) => {
+  const handleProductPress = (product: any) => {
+    // Use _id if available, fallback to id
+    const productId = product._id || product.id;
     router.push(`/product/${productId}` as any);
   };
 
@@ -63,19 +92,131 @@ export default function ProductsScreen() {
   };
 
   const clearCategoryFilter = () => {
-    router.setParams({ category: undefined });
+    router.setParams({ category: undefined, storeId: undefined });
+  };
+
+  const clearStoreFilter = () => {
+    router.setParams({ storeId: undefined });
+  };
+
+  const renderStore = ({ item }: { item: Store }) => {
+    return (
+      <Pressable
+        onPress={() => handleStorePress(item._id)}
+        className="mb-4 mx-4 rounded-3xl overflow-hidden bg-white active:scale-[0.98]"
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+          elevation: 5,
+        }}
+      >
+        <View className="flex-row">
+          {/* Store Image */}
+          <View className="w-32 h-32 relative">
+            {item.image ? (
+              <>
+                <Image
+                  source={{ uri: `${S3_BASE_URL}/${item.image}` }}
+                  className="w-full h-full"
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={["transparent", "rgba(0,0,0,0.3)"]}
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 40,
+                  }}
+                />
+              </>
+            ) : (
+              <View className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 items-center justify-center">
+                <Store size={32} color="#D1D5DB" strokeWidth={1.5} />
+              </View>
+            )}
+            
+            {/* Verified Badge */}
+            {item.isVerified && (
+              <View className="absolute top-2 left-2">
+                <LinearGradient
+                  colors={["#10B981", "#059669"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                  }}
+                >
+                  <Text className="text-white text-xs font-bold">
+                    ✓ Verified
+                  </Text>
+                </LinearGradient>
+              </View>
+            )}
+
+            {/* Status Badge */}
+            <View className="absolute bottom-2 right-2">
+              <View 
+                className={`px-2 py-1 rounded-full ${
+                  item.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'
+                }`}
+              >
+                <Text className="text-white text-xs font-semibold">
+                  {item.status}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Store Details */}
+          <View className="flex-1 p-4 justify-between">
+            {/* Name and Address */}
+            <View>
+              <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text className="text-sm text-gray-500 mt-1" numberOfLines={1}>
+                📍 {item.address}
+              </Text>
+              <Text className="text-sm text-gray-400 mt-1" numberOfLines={1}>
+                ✉️ {item.email}
+              </Text>
+            </View>
+
+            {/* View Products Button */}
+            <View className="mt-3">
+              <View className="bg-blue-50 self-start px-4 py-2 rounded-full">
+                <Text className="text-xs text-blue-700 font-semibold">
+                  View Products →
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Pressable>
+    );
   };
 
   const renderProduct = ({ item }: { item: Product }) => {
     const isService = item.category === "Service";
     const hasDiscount = item.offers && item.offers.length > 0;
-    const discountPercent = hasDiscount
-      ? Math.round(((parseFloat(item.price) - item.finalPrice) / parseFloat(item.price)) * 100)
+    
+    // Calculate final price - use finalPrice if it exists, otherwise use price
+    const displayPrice = item.finalPrice || parseFloat(item.price);
+    const originalPrice = parseFloat(item.price);
+    
+    const discountPercent = hasDiscount && item.finalPrice
+      ? Math.round(((originalPrice - item.finalPrice) / originalPrice) * 100)
       : 0;
 
     return (
       <Pressable
-        onPress={() => handleProductPress(item.id)}
+        onPress={() => handleProductPress(item)}
         className="mb-4 mx-4 rounded-3xl overflow-hidden bg-white active:scale-[0.98]"
         style={{
           shadowColor: "#000",
@@ -91,7 +232,7 @@ export default function ProductsScreen() {
             {item.images && item.images.length > 0 ? (
               <>
                 <Image
-                  source={{ uri: item.images[0] }}
+                   source={{ uri: `${S3_BASE_URL}/${item.images[0]}` }}
                   className="w-full h-full"
                   resizeMode="cover"
                 />
@@ -178,14 +319,14 @@ export default function ProductsScreen() {
             <View className="mt-3">
               <View className="flex-row items-baseline">
                 <Text className="text-2xl font-bold text-blue-600">
-                  ₹{item.finalPrice}
+                  ₹{displayPrice}
                 </Text>
                 {isService && (
                   <Text className="text-xs text-gray-600 ml-1">
                     /hr
                   </Text>
                 )}
-                {!isService && hasDiscount && (
+                {!isService && hasDiscount && item.finalPrice && (
                   <Text className="text-sm text-gray-400 line-through ml-2">
                     ₹{item.price}
                   </Text>
@@ -228,6 +369,10 @@ export default function ProductsScreen() {
     );
   };
 
+  // Determine what to show based on params
+  const showingStores = categoryFilter && !storeId;
+  const showingProducts = storeId || !categoryFilter;
+
   return (
     <View className="flex-1 bg-gray-50">
       {/* Premium Header with Gradient */}
@@ -247,118 +392,169 @@ export default function ProductsScreen() {
             </Pressable>
             <View className="flex-1 items-center">
               <Text className="text-2xl font-bold text-white">
-                {categoryFilter || "All Products"}
+                {showingStores 
+                  ? `${categoryFilter} Stores`
+                  : storeId
+                  ? "Products"
+                  : "All Products"
+                }
               </Text>
-              {filteredProducts.length > 0 && (
+              {showingStores && stores.length > 0 && (
                 <Text className="text-blue-100 text-sm mt-0.5">
-                  {filteredProducts.length} items
+                  {stores.length} stores
+                </Text>
+              )}
+              {showingProducts && displayProducts && displayProducts.length > 0 && (
+                <Text className="text-blue-100 text-sm mt-0.5">
+                  {displayProducts.length} items
                 </Text>
               )}
             </View>
             <View className="w-12" />
           </View>
 
-          {/* Premium Search Bar */}
-          <View
-            className="bg-white rounded-2xl flex-row items-center px-4 py-3.5"
-            style={{
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <Search size={20} color="#9CA3AF" strokeWidth={2} />
-            <TextInput
-              placeholder="Search products..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              className="flex-1 ml-3 text-gray-900 text-base"
-              placeholderTextColor="#9CA3AF"
-            />
-            {searchQuery.length > 0 && (
-              <Pressable
-                onPress={clearSearch}
-                className="bg-gray-100 rounded-full p-1"
-              >
-                <X size={16} color="#6B7280" strokeWidth={2.5} />
-              </Pressable>
-            )}
-          </View>
+          {/* Premium Search Bar - Only show for products */}
+          {showingProducts && (
+            <View
+              className="bg-white rounded-2xl flex-row items-center px-4 py-3.5"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 3,
+              }}
+            >
+              <Search size={20} color="#9CA3AF" strokeWidth={2} />
+              <TextInput
+                placeholder="Search products..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                className="flex-1 ml-3 text-gray-900 text-base"
+                placeholderTextColor="#9CA3AF"
+              />
+              {searchQuery.length > 0 && (
+                <Pressable
+                  onPress={clearSearch}
+                  className="bg-gray-100 rounded-full p-1"
+                >
+                  <X size={16} color="#6B7280" strokeWidth={2.5} />
+                </Pressable>
+              )}
+            </View>
+          )}
         </View>
       </LinearGradient>
 
-      {/* Active Filter Chip */}
-      {categoryFilter && (
-        <View className="px-4 pt-4 pb-2">
-          <Pressable
-            onPress={clearCategoryFilter}
-            className="self-start flex-row items-center px-4 py-2.5 rounded-full"
-            style={{
-              backgroundColor: "#DBEAFE",
-              shadowColor: "#2563EB",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.15,
-              shadowRadius: 4,
-              elevation: 2,
-            }}
-          >
-            <Text className="text-blue-700 font-semibold mr-2">
-              {categoryFilter}
-            </Text>
-            <X size={16} color="#1D4ED8" strokeWidth={3} />
-          </Pressable>
+      {/* Breadcrumb Filters */}
+      {(categoryFilter || storeId) && (
+        <View className="px-4 pt-4 pb-2 flex-row flex-wrap gap-2">
+          {categoryFilter && (
+            <Pressable
+              onPress={clearCategoryFilter}
+              className="flex-row items-center px-4 py-2.5 rounded-full"
+              style={{
+                backgroundColor: "#DBEAFE",
+                shadowColor: "#2563EB",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 4,
+                elevation: 2,
+              }}
+            >
+              <Text className="text-blue-700 font-semibold mr-2">
+                {categoryFilter}
+              </Text>
+              <X size={16} color="#1D4ED8" strokeWidth={3} />
+            </Pressable>
+          )}
+          
+          {storeId && (
+            <Pressable
+              onPress={clearStoreFilter}
+              className="flex-row items-center px-4 py-2.5 rounded-full"
+              style={{
+                backgroundColor: "#FEF3C7",
+                shadowColor: "#F59E0B",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 4,
+                elevation: 2,
+              }}
+            >
+              <Text className="text-amber-700 font-semibold mr-2">
+                Store Products
+              </Text>
+              <X size={16} color="#D97706" strokeWidth={3} />
+            </Pressable>
+          )}
         </View>
       )}
 
+      {/* Stores List */}
+      {showingStores && (
+        <>
+          {isLoadingStores ? (
+            <View className="flex-1 items-center justify-center">
+              <ActivityIndicator size="large" color="#2563EB" />
+              <Text className="text-gray-500 mt-4 font-medium">Loading stores...</Text>
+            </View>
+          ) : stores.length > 0 ? (
+            <FlatList
+              data={stores}
+              renderItem={renderStore}
+              keyExtractor={(item) => item._id}
+              contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <View className="flex-1 items-center justify-center px-6">
+              <View className="bg-white rounded-3xl p-8 items-center shadow-lg">
+                <Text className="text-7xl mb-4">🏪</Text>
+                <Text className="text-xl font-bold text-gray-900 mb-2">
+                  No stores found
+                </Text>
+                <Text className="text-gray-500 text-center text-base leading-6">
+                  No stores available in "{categoryFilter}" category
+                </Text>
+              </View>
+            </View>
+          )}
+        </>
+      )}
+
       {/* Products List */}
-      {isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text className="text-gray-500 mt-4 font-medium">Loading products...</Text>
-        </View>
-      ) : filteredProducts.length > 0 ? (
-        <FlatList
-          data={filteredProducts}
-          renderItem={renderProduct}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        <View className="flex-1 items-center justify-center px-6">
-          <View className="bg-white rounded-3xl p-8 items-center shadow-lg">
-            <Text className="text-7xl mb-4">📦</Text>
-            <Text className="text-xl font-bold text-gray-900 mb-2">
-              No products found
-            </Text>
-            <Text className="text-gray-500 text-center text-base leading-6">
-              {categoryFilter
-                ? `No products available in "${categoryFilter}" category`
-                : searchQuery
-                ? "Try searching with different keywords"
-                : "No products available at the moment"}
-            </Text>
-            {categoryFilter && (
-              <Pressable
-                onPress={clearCategoryFilter}
-                className="mt-6 rounded-full overflow-hidden"
-              >
-                <LinearGradient
-                  colors={["#2563EB", "#1D4ED8"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{ paddingHorizontal: 24, paddingVertical: 12 }}
-                >
-                  <Text className="text-white font-semibold text-base">
-                    View All Products
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            )}
-          </View>
-        </View>
+      {showingProducts && (
+        <>
+          {isLoadingProducts ? (
+            <View className="flex-1 items-center justify-center">
+              <ActivityIndicator size="large" color="#2563EB" />
+              <Text className="text-gray-500 mt-4 font-medium">Loading products...</Text>
+            </View>
+          ) : displayProducts && displayProducts.length > 0 ? (
+            <FlatList
+              data={displayProducts}
+              renderItem={renderProduct}
+              keyExtractor={(item) => item._id || item.id}
+              contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <View className="flex-1 items-center justify-center px-6">
+              <View className="bg-white rounded-3xl p-8 items-center shadow-lg">
+                <Text className="text-7xl mb-4">📦</Text>
+                <Text className="text-xl font-bold text-gray-900 mb-2">
+                  No products found
+                </Text>
+                <Text className="text-gray-500 text-center text-base leading-6">
+                  {searchQuery
+                    ? "Try searching with different keywords"
+                    : "No products available at the moment"}
+                </Text>
+              </View>
+            </View>
+          )}
+        </>
       )}
     </View>
   );

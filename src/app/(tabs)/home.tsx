@@ -3,15 +3,14 @@ import { useRouter } from "expo-router";
 import {
   Briefcase,
   ChevronRight,
-  Droplet,
+  Fish,
+  HomeIcon,
   Leaf,
-  Milk,
   Package,
   Phone,
-  Sparkles,
+  ShoppingCart,
   User,
-  Wrench,
-  Zap
+  Utensils
 } from "lucide-react-native";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -40,78 +39,62 @@ const CAROUSEL_IMAGES = [
 
 // Icon mapping for different categories
 const CATEGORY_ICONS: Record<string, any> = {
-  "Milk": Milk,
-  "Vegetable": Leaf,
-  "Vegetables": Leaf,
-  "Electrician": Zap,
-  "Mechanic": Wrench,
-  "Plumber": Droplet,
-  "Plumbing": Droplet,
-  "Cleaning": Sparkles,
+  "Food": Utensils,
+  "Vegetables and fruits": Leaf,
+  "Groceries": ShoppingCart,
+  "Home made": HomeIcon,
   "Service": Briefcase,
+  "Fish meat": Fish,
   "default": Package,
 };
-
 // Premium white and blue color gradients
-const CATEGORY_GRADIENTS: Record<string, { gradient: string[], iconColor: string, shadowColor: string }> = {
-  // Fresh Greens for Produce
-  "Milk": {
-    gradient: ["#FFFFFF", "#F0F9FF"], // Soft Blue/White
+const CATEGORY_GRADIENTS: Record<
+  string,
+  { gradient: string[]; iconColor: string; shadowColor: string }
+> = {
+  "Food": {
+    gradient: ["#FFFFFF", "#FFF7ED"],
+    iconColor: "#9A3412",
+    shadowColor: "#FDBA74",
+  },
+
+  "Vegetables and fruits": {
+    gradient: ["#FFFFFF", "#ECFDF5"],
+    iconColor: "#047857",
+    shadowColor: "#6EE7B7",
+  },
+
+  "Groceries": {
+    gradient: ["#FFFFFF", "#F0F9FF"],
     iconColor: "#0369A1",
     shadowColor: "#7DD3FC",
   },
-  "Vegetable": {
-    gradient: ["#FFFFFF", "#F0FDF4"], // Soft Green
-    iconColor: "#15803D",
-    shadowColor: "#86EFAC",
-  },
-  "Vegetables": {
-    gradient: ["#FFFFFF", "#F0FDF4"],
-    iconColor: "#15803D",
-    shadowColor: "#86EFAC",
+
+  "Home made": {
+    gradient: ["#FFFFFF", "#FFF1F2"],
+    iconColor: "#9F1239",
+    shadowColor: "#FDA4AF",
   },
 
-  // Professional/Technical Services
-  "Electrician": {
-    gradient: ["#FFFFFF", "#FFFBEB"], // Warm Yellow/Amber
-    iconColor: "#B45309",
-    shadowColor: "#FCD34D",
-  },
-  "Mechanic": {
-    gradient: ["#FFFFFF", "#F8FAFC"], // Steel Grey
-    iconColor: "#334155",
-    shadowColor: "#CBD5E1",
-  },
-  "Plumber": {
-    gradient: ["#FFFFFF", "#EFF6FF"], // Water Blue
-    iconColor: "#1D4ED8",
-    shadowColor: "#93C5FD",
-  },
-  "Plumbing": {
-    gradient: ["#FFFFFF", "#EFF6FF"],
-    iconColor: "#1D4ED8",
-    shadowColor: "#93C5FD",
-  },
-  
-  // High-Energy/Active Services
-  "Cleaning": {
-    gradient: ["#FFFFFF", "#FAF5FF"], // Purple
-    iconColor: "#7E22CE",
-    shadowColor: "#D8B4FE",
-  },
   "Service": {
-    gradient: ["#FFFFFF", "#ECFEFF"], // Cyan/Teal
+    gradient: ["#FFFFFF", "#ECFEFF"],
     iconColor: "#0E7490",
     shadowColor: "#67E8F9",
   },
 
-  // Fallback
+  "Fish meat": {
+    gradient: ["#FFFFFF", "#EFF6FF"],
+    iconColor: "#1D4ED8",
+    shadowColor: "#93C5FD",
+  },
+
   "default": {
     gradient: ["#FFFFFF", "#F1F5F9"],
     iconColor: "#475569",
     shadowColor: "#94A3B8",
   },
 };
+
 
 export default function Home() {
   const router = useRouter();
