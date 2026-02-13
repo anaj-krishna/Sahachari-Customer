@@ -1,49 +1,47 @@
+// /home/user/Desktop/Sahachari-Customer/src/app/(auth)/login.tsx
+
 import { router } from "expo-router";
 import { useState } from "react";
-import { 
-  Pressable, 
-  Text, 
-  View, 
-  KeyboardAvoidingView, 
-  Platform, 
-  ScrollView,
-  TextInput,
+import {
   ActivityIndicator,
-  TouchableOpacity
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+
+import { useLogin } from "@/hooks/useAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const submit = async () => {
-    setIsLoading(true);
+  const loginMutation = useLogin();
+  const isLoading = loginMutation.isPending;
+
+  const submit = () => {
     setErrorMsg(null);
-    
-    try {
-      // Replace this with your actual login API call
-      const response = await fetch("YOUR_API_ENDPOINT/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+
+    loginMutation.mutate(
+      { email, password },
+      {
+        onSuccess: () => {
+          router.replace("/(tabs)/home");
         },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data?.message || "Invalid credentials or server error");
+        onError: (err: any) => {
+          setErrorMsg(
+            err?.response?.data?.message ||
+              err?.message ||
+              "Invalid credentials or server error"
+          );
+        },
       }
-
-      // Success - navigate to home
-      router.replace("/(tabs)/home");
-    } catch (err: any) {
-      setErrorMsg(err?.message || "Invalid credentials or server error");
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
   return (

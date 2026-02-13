@@ -3,7 +3,7 @@ import { useAuthStore } from "../store/auth.store";
 
 // Use the environment variable for production builds
 // Fallback to local IP only if the env variable is missing
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.6:3000";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.2.68:3000";
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -22,7 +22,7 @@ api.interceptors.request.use((config) => {
       {
         hasToken: Boolean(token),
         tokenLength: token?.length || 0,
-      }
+      },
     );
   }
 
@@ -41,5 +41,5 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
