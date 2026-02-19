@@ -30,7 +30,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditProfileModal } from "../../components/settings/EditProfileModal";
 import { useAuthStore } from "../../store/auth.store";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL || "http://192.168.2.66:3000";
 const S3_BASE_URL =
   process.env.EXPO_PUBLIC_S3_BASE_URL ||
   "https://sahachari-uploads.s3.ap-south-1.amazonaws.com";
@@ -55,7 +56,12 @@ export default function Settings() {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editField, setEditField] = useState<
-    "name" | "mobileNumber" | "address" | "address2" | "serviceablePincodes" | null
+    | "name"
+    | "mobileNumber"
+    | "address"
+    | "address2"
+    | "serviceablePincodes"
+    | null
   >(null);
   const [editValue, setEditValue] = useState("");
 
@@ -83,7 +89,7 @@ export default function Settings() {
       field: string;
       value: string | string[];
     }) => {
-      const authToken = await useAuthStore.getState().token;;
+      const authToken = await useAuthStore.getState().token;
       const body: any = {};
 
       if (field === "serviceablePincodes") {
@@ -117,7 +123,7 @@ export default function Settings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
       setShowEditModal(false);
-      
+
       if (Platform.OS === "android") {
         ToastAndroid.show("Profile updated successfully!", ToastAndroid.SHORT);
       } else {
@@ -153,22 +159,25 @@ export default function Settings() {
         fileExtension === "png"
           ? "image/png"
           : fileExtension === "webp"
-          ? "image/webp"
-          : "image/jpeg";
+            ? "image/webp"
+            : "image/jpeg";
 
       // Get presigned URL
-      const presignedResponse = await fetch(`${API_BASE_URL}/s3/presigned-url`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+      const presignedResponse = await fetch(
+        `${API_BASE_URL}/s3/presigned-url`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            fileName,
+            fileType,
+            folder: "avatars",
+          }),
         },
-        body: JSON.stringify({
-          fileName,
-          fileType,
-          folder: "avatars",
-        }),
-      });
+      );
 
       if (!presignedResponse.ok) {
         throw new Error("Failed to get presigned URL");
@@ -211,7 +220,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
-      
+
       if (Platform.OS === "android") {
         ToastAndroid.show("Profile picture updated!", ToastAndroid.SHORT);
       } else {
@@ -225,8 +234,13 @@ export default function Settings() {
   });
 
   const openEditModal = (
-    field: "name" | "mobileNumber" | "address" | "address2" | "serviceablePincodes",
-    currentValue?: string
+    field:
+      | "name"
+      | "mobileNumber"
+      | "address"
+      | "address2"
+      | "serviceablePincodes",
+    currentValue?: string,
   ) => {
     let value = "";
     if (profile) {
@@ -261,7 +275,7 @@ export default function Settings() {
       if (status !== "granted") {
         Alert.alert(
           "Permission needed",
-          "Please grant permission to access photos"
+          "Please grant permission to access photos",
         );
         return;
       }
@@ -316,7 +330,12 @@ export default function Settings() {
     icon: any;
     label: string;
     value?: string;
-    field?: "name" | "mobileNumber" | "address" | "address2" | "serviceablePincodes";
+    field?:
+      | "name"
+      | "mobileNumber"
+      | "address"
+      | "address2"
+      | "serviceablePincodes";
   }) => (
     <Pressable
       onPress={() => field && openEditModal(field, value)}

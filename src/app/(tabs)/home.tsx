@@ -10,7 +10,7 @@ import {
   Phone,
   ShoppingCart,
   User,
-  Utensils
+  Utensils,
 } from "lucide-react-native";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -39,20 +39,20 @@ const CAROUSEL_IMAGES = [
 
 // Icon mapping for different categories
 const CATEGORY_ICONS: Record<string, any> = {
-  "Food": Utensils,
+  Food: Utensils,
   "Vegetables and fruits": Leaf,
-  "Groceries": ShoppingCart,
+  Groceries: ShoppingCart,
   "Home made": HomeIcon,
-  "Service": Briefcase,
+  Service: Briefcase,
   "Fish meat": Fish,
-  "default": Package,
+  default: Package,
 };
 // Premium white and blue color gradients
 const CATEGORY_GRADIENTS: Record<
   string,
   { gradient: string[]; iconColor: string; shadowColor: string }
 > = {
-  "Food": {
+  Food: {
     gradient: ["#FFFFFF", "#FFF7ED"],
     iconColor: "#9A3412",
     shadowColor: "#FDBA74",
@@ -64,7 +64,7 @@ const CATEGORY_GRADIENTS: Record<
     shadowColor: "#6EE7B7",
   },
 
-  "Groceries": {
+  Groceries: {
     gradient: ["#FFFFFF", "#F0F9FF"],
     iconColor: "#0369A1",
     shadowColor: "#7DD3FC",
@@ -76,7 +76,7 @@ const CATEGORY_GRADIENTS: Record<
     shadowColor: "#FDA4AF",
   },
 
-  "Service": {
+  Service: {
     gradient: ["#FFFFFF", "#ECFEFF"],
     iconColor: "#0E7490",
     shadowColor: "#67E8F9",
@@ -88,13 +88,12 @@ const CATEGORY_GRADIENTS: Record<
     shadowColor: "#93C5FD",
   },
 
-  "default": {
+  default: {
     gradient: ["#FFFFFF", "#F1F5F9"],
     iconColor: "#475569",
     shadowColor: "#94A3B8",
   },
 };
-
 
 export default function Home() {
   const router = useRouter();
@@ -102,7 +101,7 @@ export default function Home() {
   const { profile } = useProfile();
   const [activeSlide, setActiveSlide] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const { data, isLoading } = useProducts(
     searchQuery ? { search: searchQuery } : undefined,
@@ -111,7 +110,7 @@ export default function Home() {
   // Extract unique categories from products data
   const categories = useMemo(() => {
     if (!data || data.length === 0) return [];
-    
+
     const uniqueCategories = new Set<string>();
     data.forEach((product: any) => {
       if (product.category) {
@@ -121,9 +120,10 @@ export default function Home() {
     });
 
     return Array.from(uniqueCategories).map((category, index) => {
-      const colors = CATEGORY_GRADIENTS[category] || CATEGORY_GRADIENTS["default"];
+      const colors =
+        CATEGORY_GRADIENTS[category] || CATEGORY_GRADIENTS["default"];
       const icon = CATEGORY_ICONS[category] || CATEGORY_ICONS["default"];
-      
+
       return {
         id: `category-${index}`,
         name: category,
@@ -136,7 +136,9 @@ export default function Home() {
   }, [data]);
 
   const scaleAnims = useRef(
-    Array(10).fill(0).map(() => new Animated.Value(1))
+    Array(10)
+      .fill(0)
+      .map(() => new Animated.Value(1)),
   ).current;
 
   const handleScroll = (event: any) => {
@@ -189,9 +191,9 @@ export default function Home() {
         style={{ paddingTop: insets.top + 24, paddingBottom: 32 }}
       >
         {/* Decorative overlay pattern */}
-        <View 
+        <View
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
@@ -199,36 +201,39 @@ export default function Home() {
             opacity: 0.1,
           }}
         >
-          <View style={{ 
-            width: 200, 
-            height: 200, 
-            borderRadius: 100, 
-            backgroundColor: 'white',
-            position: 'absolute',
-            top: -50,
-            right: -50,
-          }} />
-          <View style={{ 
-            width: 150, 
-            height: 150, 
-            borderRadius: 75, 
-            backgroundColor: 'white',
-            position: 'absolute',
-            bottom: -30,
-            left: -40,
-          }} />
+          <View
+            style={{
+              width: 200,
+              height: 200,
+              borderRadius: 100,
+              backgroundColor: "white",
+              position: "absolute",
+              top: -50,
+              right: -50,
+            }}
+          />
+          <View
+            style={{
+              width: 150,
+              height: 150,
+              borderRadius: 75,
+              backgroundColor: "white",
+              position: "absolute",
+              bottom: -30,
+              left: -40,
+            }}
+          />
         </View>
 
         <View className="px-6">
           <View className="flex-row items-center justify-between">
             <View className="flex-1">
               <View className="flex-row items-center mb-1">
-                
-                <Text 
-                  className="text-4xl font-black text-white ml-2" 
-                  style={{ 
+                <Text
+                  className="text-4xl font-black text-white ml-2"
+                  style={{
                     letterSpacing: 1,
-                    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+                    textShadowColor: "rgba(0, 0, 0, 0.1)",
                     textShadowOffset: { width: 0, height: 2 },
                     textShadowRadius: 4,
                   }}
@@ -249,8 +254,8 @@ export default function Home() {
               onPress={() => router.push("/settings/settings")}
               className="relative"
             >
-              <View 
-                className="rounded-full"
+              <View
+                className="rounded-full overflow-hidden"
                 style={{
                   shadowColor: "#1E40AF",
                   shadowOffset: { width: 0, height: 6 },
@@ -266,19 +271,20 @@ export default function Home() {
                   {profile?.image ? (
                     <Image
                       source={{ uri: `${S3_BASE_URL}/${profile.image}` }}
-                      className="w-16 h-16 rounded-full"
+                      className="w-16 h-16"
                       style={{
                         borderWidth: 3,
-                        borderColor: '#FFFFFF',
+                        borderColor: "#FFFFFF",
+                        borderRadius: 999,
                       }}
                     />
                   ) : (
-                    <View 
+                    <View
                       className="w-16 h-16 rounded-full items-center justify-center"
                       style={{
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: "#FFFFFF",
                         borderWidth: 3,
-                        borderColor: '#EFF6FF',
+                        borderColor: "#EFF6FF",
                       }}
                     >
                       <User size={28} color="#2563EB" strokeWidth={2.5} />
@@ -291,7 +297,7 @@ export default function Home() {
         </View>
       </LinearGradient>
 
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
@@ -307,12 +313,8 @@ export default function Home() {
             scrollEventThrottle={16}
           >
             {CAROUSEL_IMAGES.map((image, index) => (
-              <View
-                key={index}
-                style={{ width }}
-                className="items-center px-6"
-              >
-                <View 
+              <View key={index} style={{ width }} className="items-center px-6">
+                <View
                   className="rounded-3xl overflow-hidden bg-white"
                   style={{
                     shadowColor: "#2563EB",
@@ -321,16 +323,16 @@ export default function Home() {
                     shadowRadius: 20,
                     elevation: 15,
                     borderWidth: 1,
-                    borderColor: '#EFF6FF',
+                    borderColor: "#EFF6FF",
                   }}
                 >
-                 <Image
-  source={image}
-  // Keep your dimensions
-  style={{ width: width - 48, height: 220 }} 
-  // CHANGE THIS LINE:
-  resizeMode="contain" 
-/>
+                  <Image
+                    source={image}
+                    // Keep your dimensions
+                    style={{ width: width - 48, height: 220 }}
+                    // CHANGE THIS LINE:
+                    resizeMode="contain"
+                  />
                   {/* Elegant overlay */}
                   <LinearGradient
                     colors={["transparent", "rgba(30, 58, 138, 0.2)"]}
@@ -368,8 +370,10 @@ export default function Home() {
                   borderRadius: 4,
                   marginHorizontal: 5,
                   width: activeSlide === index ? 32 : 8,
-                  backgroundColor: activeSlide === index ? "#2563EB" : "#CBD5E1",
-                  shadowColor: activeSlide === index ? "#2563EB" : "transparent",
+                  backgroundColor:
+                    activeSlide === index ? "#2563EB" : "#CBD5E1",
+                  shadowColor:
+                    activeSlide === index ? "#2563EB" : "transparent",
                   shadowOffset: { width: 0, height: 3 },
                   shadowOpacity: 0.4,
                   shadowRadius: 6,
@@ -388,7 +392,7 @@ export default function Home() {
             transform: [{ scale: pressed ? 0.97 : 1 }],
           })}
         >
-          <View 
+          <View
             className="rounded-3xl overflow-hidden bg-white"
             style={{
               shadowColor: "#2563EB",
@@ -397,7 +401,7 @@ export default function Home() {
               shadowRadius: 16,
               elevation: 10,
               borderWidth: 1,
-              borderColor: '#EFF6FF',
+              borderColor: "#EFF6FF",
             }}
           >
             <LinearGradient
@@ -408,34 +412,37 @@ export default function Home() {
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-1 mr-4">
-                  <View className="flex-row items-center mb-3">
-                   
-                  </View>
-                  <Text className="text-3xl font-black text-blue-900 mb-2" style={{ letterSpacing: 0.5 }}>
+                  <View className="flex-row items-center mb-3"></View>
+                  <Text
+                    className="text-3xl font-black text-blue-900 mb-2"
+                    style={{ letterSpacing: 0.5 }}
+                  >
                     Happy 60
                   </Text>
                   <Text className="text-blue-600 text-sm font-semibold leading-5">
                     Exclusive for senior citizens
                   </Text>
                 </View>
-                
-                <View 
-                  className="rounded-2xl"
+
+                <View
+                  className="rounded-full overflow-hidden w-16 h-16 items-center justify-center"
                   style={{
                     shadowColor: "#2563EB",
                     shadowOffset: { width: 0, height: 6 },
                     shadowOpacity: 0.3,
                     shadowRadius: 10,
                     elevation: 8,
+                    borderRadius: 999,
                   }}
                 >
                   <LinearGradient
                     colors={["#3B82F6", "#2563EB", "#1D4ED8"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    className="rounded-2xl p-5"
+                    className="p-3 items-center justify-center w-full h-full"
+                    style={{ borderRadius: 999 }}
                   >
-                    <Phone size={26} color="#FFFFFF" strokeWidth={2.5} />
+                    <Phone size={20} color="#FFFFFF" strokeWidth={2.5} />
                   </LinearGradient>
                 </View>
               </View>
@@ -447,7 +454,10 @@ export default function Home() {
         <View className="mt-10 px-6">
           <View className="flex-row items-center justify-between mb-7">
             <View className="flex-1">
-              <Text className="text-3xl font-black text-gray-900 tracking-tight" style={{ letterSpacing: 0.3 }}>
+              <Text
+                className="text-3xl font-black text-gray-900 tracking-tight"
+                style={{ letterSpacing: 0.3 }}
+              >
                 Our Services
               </Text>
               <View className="flex-row items-center mt-2">
@@ -457,7 +467,7 @@ export default function Home() {
                 </Text>
               </View>
             </View>
-            <View 
+            <View
               className="bg-blue-50 rounded-2xl p-3"
               style={{
                 shadowColor: "#2563EB",
@@ -474,7 +484,9 @@ export default function Home() {
           {isLoading && (
             <View className="py-20 items-center">
               <ActivityIndicator size="large" color="#2563EB" />
-              <Text className="text-blue-400 mt-6 font-semibold text-base">Loading services...</Text>
+              <Text className="text-blue-400 mt-6 font-semibold text-base">
+                Loading services...
+              </Text>
             </View>
           )}
 
@@ -497,7 +509,7 @@ export default function Home() {
                       onPressIn={() => handleCategoryPressIn(index)}
                       onPressOut={() => handleCategoryPressOut(index)}
                     >
-                      <View 
+                      <View
                         className="rounded-3xl overflow-hidden"
                         style={{
                           shadowColor: category.shadowColor,
@@ -506,7 +518,7 @@ export default function Home() {
                           shadowRadius: 14,
                           elevation: 8,
                           borderWidth: 1,
-                          borderColor: '#F1F5F9',
+                          borderColor: "#F1F5F9",
                         }}
                       >
                         <LinearGradient
@@ -516,21 +528,21 @@ export default function Home() {
                           style={{ padding: 24 }}
                         >
                           <View className="items-center">
-                            <View 
-                              className="rounded-2xl p-4 mb-4"
+                            <View
+                              className="rounded-full p-4 mb-4 w-16 h-16 items-center justify-center"
                               style={{
-                                backgroundColor: '#FFFFFF',
+                                backgroundColor: "#FFFFFF",
                                 shadowColor: category.iconColor,
                                 shadowOffset: { width: 0, height: 4 },
                                 shadowOpacity: 0.2,
                                 shadowRadius: 8,
                                 elevation: 6,
                                 borderWidth: 1,
-                                borderColor: '#F1F5F9',
+                                borderColor: "#F1F5F9",
                               }}
                             >
                               <IconComponent
-                                size={32}
+                                size={20}
                                 color={category.iconColor}
                                 strokeWidth={2.5}
                               />
@@ -553,7 +565,6 @@ export default function Home() {
           )}
 
           {/* Premium Empty State */}
-          
         </View>
       </ScrollView>
     </View>
