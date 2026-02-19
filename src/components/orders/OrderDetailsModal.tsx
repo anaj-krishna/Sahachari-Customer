@@ -1,5 +1,14 @@
 // components/orders/OrderDetailsModal.tsx
-import { ChevronLeft, CreditCard, MapPin, Package, Phone, StickyNote, X } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  ChevronLeft,
+  CreditCard,
+  MapPin,
+  Package,
+  Phone,
+  StickyNote,
+  X,
+} from "lucide-react-native";
 import {
   ActivityIndicator,
   Image,
@@ -14,24 +23,24 @@ import { getStatusColor } from "./OrderCard";
 
 const getStatusEmoji = (status: string) => {
   const emojis: Record<string, string> = {
-    PLACED: '📦',
-    CONFIRMED: '✅',
-    SHIPPED: '🚚',
-    DELIVERED: '🎉',
-    CANCELLED: '❌',
+    PLACED: "📦",
+    CONFIRMED: "✅",
+    SHIPPED: "🚚",
+    DELIVERED: "🎉",
+    CANCELLED: "❌",
   };
-  return emojis[status] || '📋';
+  return emojis[status] || "📋";
 };
 
 const getStatusTextColor = (status: string) => {
   const colors: Record<string, string> = {
-    PLACED: 'text-yellow-800',
-    CONFIRMED: 'text-blue-800',
-    SHIPPED: 'text-purple-800',
-    DELIVERED: 'text-green-800',
-    CANCELLED: 'text-red-800',
+    PLACED: "text-yellow-800",
+    CONFIRMED: "text-blue-800",
+    SHIPPED: "text-purple-800",
+    DELIVERED: "text-green-800",
+    CANCELLED: "text-red-800",
   };
-  return colors[status] || 'text-gray-800';
+  return colors[status] || "text-gray-800";
 };
 
 export function OrderDetailsModal({
@@ -45,91 +54,122 @@ export function OrderDetailsModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-gray-50">
-        {/* Premium Header with Back Button */}
-        <View className="bg-white px-4 py-4 shadow-sm border-b border-gray-100">
-          <View className="flex-row items-center justify-between">
-            {/* Back Button */}
-            <Pressable 
-              onPress={onClose}
-              className="bg-gray-100 p-2 rounded-full active:bg-gray-200 mr-3"
-            >
-              <ChevronLeft size={24} color="#374151" />
-            </Pressable>
+        <LinearGradient
+          colors={["#1E3A8A", "#2563EB", "#3B82F6"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ paddingBottom: 18 }}
+        >
+          <View className="px-4 pt-4">
+            <View className="flex-row items-center justify-between">
+              <Pressable
+                onPress={onClose}
+                className="bg-white/20 p-2 rounded-full active:bg-white/30"
+              >
+                <ChevronLeft size={22} color="#FFFFFF" />
+              </Pressable>
 
-            {/* Title */}
-            <View className="flex-row items-center flex-1">
-              <View className="bg-blue-100 p-2 rounded-full mr-3">
-                <Package size={20} color="#3B82F6" />
+              <View className="flex-row items-center">
+                <View className="bg-white/20 p-2 rounded-full mr-2">
+                  <Package size={18} color="#FFFFFF" />
+                </View>
+                <Text className="text-lg font-bold text-white">
+                  Order Details
+                </Text>
               </View>
-              <Text className="text-xl font-bold text-gray-800">Order Details</Text>
+
+              <Pressable
+                onPress={onClose}
+                className="bg-white/20 p-2 rounded-full active:bg-white/30"
+              >
+                <X size={22} color="#FFFFFF" />
+              </Pressable>
             </View>
 
-            {/* Close Button */}
-            <Pressable 
-              onPress={onClose}
-              className="bg-gray-100 p-2 rounded-full active:bg-gray-200"
-            >
-              <X size={24} color="#374151" />
-            </Pressable>
+            {order?.checkoutId && (
+              <View className="mt-4 bg-white/15 rounded-2xl p-4 border border-white/15">
+                <Text className="text-blue-100 text-xs font-semibold uppercase tracking-wider">
+                  Order ID
+                </Text>
+                <Text className="text-white text-xl font-bold mt-1">
+                  #{order.checkoutId}
+                </Text>
+              </View>
+            )}
           </View>
-        </View>
+        </LinearGradient>
 
         {!order || isLoading ? (
           <View className="flex-1 items-center justify-center">
             <View className="bg-white p-8 rounded-3xl shadow-lg items-center">
               <ActivityIndicator size="large" color="#2563eb" />
-              <Text className="text-gray-500 mt-4 font-medium">Loading details...</Text>
+              <Text className="text-gray-500 mt-4 font-medium">
+                Loading details...
+              </Text>
             </View>
           </View>
         ) : (
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-            {/* Order Status Card */}
             <View className="mx-4 mt-4 bg-white rounded-3xl shadow-md overflow-hidden">
-              <View className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
-                <View className="flex-row justify-between items-center mb-4">
-                  <View>
-                    <Text className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1">
-                      Order ID
-                    </Text>
-                    <Text className="font-bold text-xl text-gray-800">
-                      #{order.checkoutId}
+              <LinearGradient
+                colors={["#EFF6FF", "#EEF2FF", "#F5F3FF"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View className="p-6">
+                  <View className="flex-row justify-between items-center mb-4">
+                    <View>
+                      <Text className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1">
+                        Status
+                      </Text>
+                      <Text className="font-bold text-xl text-gray-800">
+                        {order.status}
+                      </Text>
+                    </View>
+                    <View className="bg-white rounded-full p-3 shadow-sm">
+                      <Text className="text-3xl">
+                        {getStatusEmoji(order.status)}
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    className={`px-5 py-3 rounded-full self-start ${getStatusColor(order.status)} shadow-sm`}
+                  >
+                    <Text
+                      className={`font-bold text-sm uppercase tracking-wide ${getStatusTextColor(order.status)}`}
+                    >
+                      {order.status}
                     </Text>
                   </View>
-                  <View className="bg-white rounded-full p-3 shadow-sm">
-                    <Text className="text-3xl">{getStatusEmoji(order.status)}</Text>
-                  </View>
                 </View>
-                <View
-                  className={`px-5 py-3 rounded-full self-start ${getStatusColor(order.status)} shadow-sm`}
-                >
-                  <Text className={`font-bold text-sm uppercase tracking-wide ${getStatusTextColor(order.status)}`}>
-                    {order.status}
-                  </Text>
-                </View>
-              </View>
+              </LinearGradient>
             </View>
 
             {/* Items Section */}
             <View className="mx-4 mt-4 bg-white rounded-3xl shadow-md p-6">
               <View className="flex-row items-center mb-4">
-                <View className="bg-green-100 p-2 rounded-lg mr-3">
+                <View className="bg-emerald-100 p-2 rounded-lg mr-3">
                   <Package size={20} color="#10B981" />
                 </View>
-                <Text className="font-bold text-xl text-gray-800">Order Items</Text>
+                <Text className="font-bold text-xl text-gray-800">
+                  Order Items
+                </Text>
               </View>
-              
+
               {order.items?.map((item: any, idx: number) => (
-                <View 
-                  key={idx} 
+                <View
+                  key={idx}
                   className="flex-row mb-4 pb-4 border-b border-gray-100 last:border-b-0 last:mb-0 last:pb-0"
                 >
                   <View className="relative">
                     <Image
                       source={{ uri: item.productId?.images?.[0] }}
-                      className="w-20 h-20 rounded-xl bg-gray-100"
+                      className="w-20 h-20 rounded-2xl bg-gray-100"
                     />
                     <View className="absolute -top-2 -right-2 bg-blue-600 rounded-full w-6 h-6 items-center justify-center shadow-md">
-                      <Text className="text-white text-xs font-bold">{item.quantity}</Text>
+                      <Text className="text-white text-xs font-bold">
+                        {item.quantity}
+                      </Text>
                     </View>
                   </View>
                   <View className="flex-1 ml-4 justify-center">
@@ -152,20 +192,23 @@ export function OrderDetailsModal({
             {/* Delivery Address Section */}
             <View className="mx-4 mt-4 bg-white rounded-3xl shadow-md p-6">
               <View className="flex-row items-center mb-4">
-                <View className="bg-red-100 p-2 rounded-lg mr-3">
+                <View className="bg-rose-100 p-2 rounded-lg mr-3">
                   <MapPin size={20} color="#EF4444" />
                 </View>
-                <Text className="font-bold text-xl text-gray-800">Delivery Address</Text>
+                <Text className="font-bold text-xl text-gray-800">
+                  Delivery Address
+                </Text>
               </View>
-              
-              <View className="bg-gray-50 rounded-xl p-4">
+
+              <View className="bg-gray-50 rounded-2xl p-4">
                 <Text className="text-gray-800 leading-6 text-base mb-3">
                   {order.deliveryAddress?.street}
                 </Text>
                 <Text className="text-gray-700 font-medium mb-3">
-                  {order.deliveryAddress?.city}, {order.deliveryAddress?.zipCode}
+                  {order.deliveryAddress?.city},{" "}
+                  {order.deliveryAddress?.zipCode}
                 </Text>
-                
+
                 <View className="flex-row items-center pt-3 border-t border-gray-200">
                   <View className="bg-blue-100 p-2 rounded-lg mr-3">
                     <Phone size={16} color="#3B82F6" />
@@ -174,11 +217,15 @@ export function OrderDetailsModal({
                     {order.deliveryAddress?.phone}
                   </Text>
                 </View>
-                
+
                 {order.deliveryAddress?.notes && (
                   <View className="mt-3 pt-3 border-t border-gray-200">
                     <View className="flex-row items-start">
-                      <StickyNote size={16} color="#F59E0B" className="mr-2 mt-0.5" />
+                      <StickyNote
+                        size={16}
+                        color="#F59E0B"
+                        className="mr-2 mt-0.5"
+                      />
                       <View className="flex-1">
                         <Text className="text-gray-500 text-xs font-semibold mb-1 uppercase tracking-wide">
                           Delivery Notes
@@ -194,19 +241,29 @@ export function OrderDetailsModal({
             </View>
 
             {/* Total Amount Section */}
-            <View className="mx-4 mt-4 mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl shadow-lg p-6">
-              <View className="flex-row items-center mb-3">
-                <View className="bg-white/20 p-2 rounded-lg mr-3">
-                  <CreditCard size={20} color="white" />
+            <View className="mx-4 mt-4 mb-4 rounded-3xl shadow-lg overflow-hidden">
+              <LinearGradient
+                colors={["#2563EB", "#1D4ED8", "#312E81"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View className="p-6">
+                  <View className="flex-row items-center mb-3">
+                    <View className="bg-white/20 p-2 rounded-lg mr-3">
+                      <CreditCard size={20} color="white" />
+                    </View>
+                    <Text className="text-white text-lg font-semibold">
+                      Total Amount
+                    </Text>
+                  </View>
+                  <Text className="text-white text-4xl font-bold">
+                    ₹{order.totalAmount?.toFixed(2)}
+                  </Text>
+                  <Text className="text-white/70 text-sm mt-2">
+                    Including all taxes and fees
+                  </Text>
                 </View>
-                <Text className="text-white text-lg font-semibold">Total Amount</Text>
-              </View>
-              <Text className="text-white text-4xl font-bold">
-                ₹{order.totalAmount?.toFixed(2)}
-              </Text>
-              <Text className="text-white/70 text-sm mt-2">
-                Including all taxes and fees
-              </Text>
+              </LinearGradient>
             </View>
 
             {/* Cancel Order Button */}
@@ -215,7 +272,8 @@ export function OrderDetailsModal({
                 <Pressable
                   onPress={() => onCancel(order._id)}
                   disabled={isCancelling}
-                  className="bg-red-500 py-4 rounded-2xl shadow-lg active:bg-red-600"
+                  className="py-4 rounded-2xl shadow-lg active:bg-red-700"
+                  style={{ backgroundColor: "#DC2626", opacity: 1 }}
                 >
                   {isCancelling ? (
                     <ActivityIndicator color="white" />

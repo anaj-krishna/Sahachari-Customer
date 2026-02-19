@@ -73,17 +73,27 @@ export function CheckoutModal({
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-white rounded-t-3xl max-h-[85%]">
-          <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200">
-            <Text className="text-2xl font-bold text-gray-800">
-              Delivery Details
-            </Text>
-            <Pressable
-              onPress={onClose}
-              className="p-2 bg-gray-100 rounded-full"
-            >
-              <X size={24} color="#374151" />
-            </Pressable>
+        <View className="bg-white rounded-t-3xl max-h-[90%] overflow-hidden">
+          <View className="items-center py-3 bg-white">
+            <View className="w-12 h-1.5 rounded-full bg-gray-200" />
+          </View>
+          <View className="bg-blue-600 px-6 py-5">
+            <View className="flex-row items-center justify-between">
+              <View>
+                <Text className="text-2xl font-bold text-white">
+                  Delivery Details
+                </Text>
+                <Text className="text-blue-100 mt-1">
+                  Confirm your address to place the order
+                </Text>
+              </View>
+              <Pressable
+                onPress={onClose}
+                className="p-2 bg-white/20 rounded-full"
+              >
+                <X size={22} color="#FFFFFF" />
+              </Pressable>
+            </View>
           </View>
 
           {isLoading ? (
@@ -94,43 +104,63 @@ export function CheckoutModal({
               </Text>
             </View>
           ) : (
-            <ScrollView className="px-6 py-4">
-              {[
-                {
-                  label: "Street Address *",
-                  key: "street",
-                  placeholder: "123 Main Street",
-                },
-                { label: "City *", key: "city", placeholder: "Mumbai" },
-                {
-                  label: "Zip Code *",
-                  key: "zipCode",
-                  placeholder: "400001",
-                  keyboard: "numeric",
-                },
-                {
-                  label: "Phone Number *",
-                  key: "phone",
-                  placeholder: "+919876543210",
-                  keyboard: "phone-pad",
-                },
-              ].map((f) => (
-                <View key={f.key} className="mb-4">
-                  <Text className="text-gray-700 font-semibold mb-2">
-                    {f.label}
+            <ScrollView className="px-6 py-5">
+              <View className="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-5">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-blue-800 font-semibold">
+                    Order Summary
                   </Text>
-                  <TextInput
-                    value={address[f.key]}
-                    onChangeText={(v) => updateField(f.key, v)}
-                    placeholder={f.placeholder}
-                    keyboardType={f.keyboard as any}
-                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800"
-                  />
+                  <Text className="text-blue-900 text-xl font-bold">
+                    ₹{total.toFixed(2)}
+                  </Text>
                 </View>
-              ))}
+                <Text className="text-blue-700 mt-1">
+                  {itemSCount} {itemSCount === 1 ? "item" : "items"}
+                </Text>
+              </View>
 
-              <View className="mb-4">
-                <Text className="text-gray-700 font-semibold mb-2">
+              <View className="bg-white border border-gray-200 rounded-2xl p-4 mb-5">
+                <Text className="text-gray-800 font-bold mb-3">
+                  Shipping Address
+                </Text>
+                {[
+                  {
+                    label: "Street Address *",
+                    key: "street",
+                    placeholder: "123 Main Street",
+                  },
+                  { label: "City *", key: "city", placeholder: "Mumbai" },
+                  {
+                    label: "Zip Code *",
+                    key: "zipCode",
+                    placeholder: "400001",
+                    keyboard: "numeric",
+                  },
+                  {
+                    label: "Phone Number *",
+                    key: "phone",
+                    placeholder: "+919876543210",
+                    keyboard: "phone-pad",
+                  },
+                ].map((f) => (
+                  <View key={f.key} className="mb-4">
+                    <Text className="text-gray-600 font-semibold mb-2">
+                      {f.label}
+                    </Text>
+                    <TextInput
+                      value={address[f.key]}
+                      onChangeText={(v) => updateField(f.key, v)}
+                      placeholder={f.placeholder}
+                      keyboardType={f.keyboard as any}
+                      className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  </View>
+                ))}
+              </View>
+
+              <View className="bg-white border border-gray-200 rounded-2xl p-4 mb-6">
+                <Text className="text-gray-800 font-bold mb-3">
                   Delivery Notes (Optional)
                 </Text>
                 <TextInput
@@ -140,24 +170,15 @@ export function CheckoutModal({
                   numberOfLines={3}
                   className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800"
                   textAlignVertical="top"
+                  placeholder="Leave instructions for the delivery partner"
+                  placeholderTextColor="#9CA3AF"
                 />
-              </View>
-
-              <View className="bg-blue-50 rounded-xl p-4 mb-6">
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-gray-600">
-                    {itemSCount} {itemSCount === 1 ? "item" : "items"}
-                  </Text>
-                  <Text className="text-2xl font-bold text-blue-600">
-                    ₹{total.toFixed(2)}
-                  </Text>
-                </View>
               </View>
 
               <Pressable
                 onPress={onConfirm}
                 disabled={isPending}
-                className="bg-blue-600 py-4 rounded-xl flex-row items-center justify-center active:bg-blue-700 mb-6"
+                className="bg-blue-600 py-4 rounded-2xl flex-row items-center justify-center active:bg-blue-700 mb-6"
               >
                 {isPending ? (
                   <ActivityIndicator color="white" />

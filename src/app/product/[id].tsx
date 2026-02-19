@@ -1,29 +1,29 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  Heart,
-  Minus,
-  Package,
-  Plus,
-  Share2,
-  ShoppingCart,
-  XCircle
+    ArrowLeft,
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+    Heart,
+    Minus,
+    Package,
+    Plus,
+    Share2,
+    ShoppingCart,
+    XCircle,
 } from "lucide-react-native";
 import { useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  Image,
-  Pressable,
-  ScrollView,
-  Share,
-  Text,
-  View,
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    Image,
+    Pressable,
+    ScrollView,
+    Share,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AddToCartModal } from "../../components/cart/AddToCartModal";
@@ -101,7 +101,7 @@ export default function ProductDetails() {
   const handleShareProduct = async () => {
     try {
       await Share.share({
-        message: `Check out ${product?.name} - ₹${finalPrice}${isService ? ' per hour' : ''}`,
+        message: `Check out ${product?.name} - ₹${finalPrice}${isService ? " per hour" : ""}`,
       });
     } catch (error) {
       console.log(error);
@@ -150,7 +150,9 @@ export default function ProductDetails() {
     return (
       <View className="flex-1 bg-gray-50 items-center justify-center">
         <ActivityIndicator size="large" color="#2563EB" />
-        <Text className="text-gray-500 mt-4 font-medium">Loading {isService ? 'service' : 'product'}...</Text>
+        <Text className="text-gray-500 mt-4 font-medium">
+          Loading {isService ? "service" : "product"}...
+        </Text>
       </View>
     );
   }
@@ -161,7 +163,7 @@ export default function ProductDetails() {
         <View className="bg-white rounded-3xl p-8 items-center shadow-lg">
           <Text className="text-6xl mb-4">😔</Text>
           <Text className="text-xl font-bold text-gray-900 mb-2">
-            Unable to load {isService ? 'service' : 'product'}
+            Unable to load {isService ? "service" : "product"}
           </Text>
           <Text className="text-gray-500 text-center mb-6">
             Something went wrong. Please try again.
@@ -197,7 +199,7 @@ export default function ProductDetails() {
       {/* Floating Header */}
       <View
         className="absolute top-0 left-0 right-0 z-10 flex-row items-center justify-between px-6"
-        style={{ paddingTop: insets.top + 12 }}
+        style={{ paddingTop: 12 }}
       >
         <Pressable
           onPress={() => router.back()}
@@ -250,7 +252,10 @@ export default function ProductDetails() {
                 </View>
               ))
             ) : (
-              <View style={{ width, height: 400 }} className="bg-gray-200 items-center justify-center">
+              <View
+                style={{ width, height: 400 }}
+                className="bg-gray-200 items-center justify-center"
+              >
                 <Package size={64} color="#9CA3AF" strokeWidth={1.5} />
                 <Text className="text-gray-400 mt-4">No image available</Text>
               </View>
@@ -300,9 +305,7 @@ export default function ProductDetails() {
                   elevation: 5,
                 }}
               >
-                <Text className="text-white text-lg font-bold">
-                  Service
-                </Text>
+                <Text className="text-white text-lg font-bold">Service</Text>
               </LinearGradient>
             </View>
           )}
@@ -359,16 +362,14 @@ export default function ProductDetails() {
             <View className="flex-row items-center justify-between">
               <View className="flex-1">
                 <Text className="text-gray-600 text-sm mb-1">
-                  {isService ? 'Rate' : 'Price'}
+                  {isService ? "Rate" : "Price"}
                 </Text>
                 <View className="flex-row items-baseline">
                   <Text className="text-4xl font-bold text-blue-600">
                     ₹{finalPrice}
                   </Text>
                   {isService && (
-                    <Text className="text-lg text-gray-600 ml-2">
-                      per hour
-                    </Text>
+                    <Text className="text-lg text-gray-600 ml-2">per hour</Text>
                   )}
                   {!isService && hasDiscount && (
                     <Text className="text-xl text-gray-400 line-through ml-3">
@@ -388,7 +389,11 @@ export default function ProductDetails() {
                 <View>
                   {product.quantity && product.quantity > 0 ? (
                     <View className="bg-green-100 px-4 py-2 rounded-full flex-row items-center">
-                      <CheckCircle size={18} color="#16A34A" strokeWidth={2.5} />
+                      <CheckCircle
+                        size={18}
+                        color="#16A34A"
+                        strokeWidth={2.5}
+                      />
                       <Text className="text-green-700 font-bold ml-2">
                         In Stock
                       </Text>
@@ -452,7 +457,10 @@ export default function ProductDetails() {
                   <Plus size={20} color="#1F2937" strokeWidth={2.5} />
                 </Pressable>
                 <Text className="ml-4 text-gray-600">
-                  Total: <Text className="font-bold text-blue-600">₹{totalPrice.toFixed(2)}</Text>
+                  Total:{" "}
+                  <Text className="font-bold text-blue-600">
+                    ₹{totalPrice.toFixed(2)}
+                  </Text>
                 </Text>
               </View>
             </View>
@@ -528,7 +536,7 @@ export default function ProductDetails() {
                   <>
                     <Package size={20} color="#FFFFFF" strokeWidth={2.5} />
                     <Text className="text-white font-bold text-base ml-2">
-                      {isService ? 'Book Now' : 'Buy Now'}
+                      {isService ? "Book Now" : "Buy Now"}
                     </Text>
                   </>
                 )}

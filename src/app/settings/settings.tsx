@@ -3,30 +3,29 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Camera,
-  ChevronRight,
-  HelpCircle,
-  LogOut,
-  Mail,
-  MapPin,
-  Phone,
-  Settings as SettingsIcon,
-  User,
+    ArrowLeft,
+    Camera,
+    ChevronRight,
+    HelpCircle,
+    LogOut,
+    Mail,
+    MapPin,
+    Phone,
+    Settings as SettingsIcon,
+    User,
 } from "lucide-react-native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  ToastAndroid,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    Platform,
+    Pressable,
+    ScrollView,
+    Text,
+    ToastAndroid,
+    View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditProfileModal } from "../../components/settings/EditProfileModal";
 import { useAuthStore } from "../../store/auth.store";
 
@@ -51,7 +50,6 @@ interface UserProfile {
 export default function Settings() {
   const logout = useAuthStore((s) => s.logout);
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -367,7 +365,7 @@ export default function Settings() {
         colors={["#2563EB", "#1D4ED8"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ paddingTop: insets.top + 16, paddingBottom: 16 }}
+        style={{ paddingTop: 16, paddingBottom: 16 }}
       >
         <View className="px-6">
           <View className="flex-row items-center justify-between">

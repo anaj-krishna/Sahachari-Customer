@@ -1,30 +1,29 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  Briefcase,
-  ChevronRight,
-  Fish,
-  HomeIcon,
-  Leaf,
-  Package,
-  Phone,
-  ShoppingCart,
-  User,
-  Utensils,
+    Briefcase,
+    ChevronRight,
+    Fish,
+    HomeIcon,
+    Leaf,
+    Package,
+    Phone,
+    ShoppingCart,
+    User,
+    Utensils,
 } from "lucide-react-native";
 import { useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  Image,
-  Linking,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    Image,
+    Linking,
+    Pressable,
+    ScrollView,
+    Text,
+    View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProducts } from "../../hooks/useProducts";
 import { useProfile } from "../../hooks/useProfile";
 
@@ -97,7 +96,6 @@ const CATEGORY_GRADIENTS: Record<
 
 export default function Home() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { profile } = useProfile();
   const [activeSlide, setActiveSlide] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -188,7 +186,7 @@ export default function Home() {
         colors={["#1E3A8A", "#2563EB", "#3B82F6"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ paddingTop: insets.top + 24, paddingBottom: 32 }}
+        style={{ paddingTop: 24, paddingBottom: 32 }}
       >
         {/* Decorative overlay pattern */}
         <View

@@ -10,9 +10,8 @@ import {
   Pressable,
   Text,
   TextInput,
-  View
+  View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCategoryStores } from "../../hooks/Usecategorystores";
 import { useProducts } from "../../hooks/useProducts";
 import { useStoreProducts } from "../../hooks/useStoreProducts";
@@ -40,11 +39,8 @@ interface Product {
   storeId?: string;
 }
 
-
-
 export default function ProductsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const categoryFilter = params.category as string | undefined;
   const storeId = params.storeId as string | undefined;
@@ -52,32 +48,35 @@ export default function ProductsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const { token } = useAuthStore();
   // Your auth token - replace with actual token from your auth system
-  const AUTH_TOKEN = token 
-  const S3_BASE_URL = process.env.EXPO_PUBLIC_S3_BASE_URL
+  const AUTH_TOKEN = token;
+  const S3_BASE_URL = process.env.EXPO_PUBLIC_S3_BASE_URL;
   // Fetch category stores when category is provided but no storeId
   const { data: stores = [], isLoading: isLoadingStores } = useCategoryStores(
     categoryFilter && !storeId ? categoryFilter : undefined,
-    AUTH_TOKEN
+    AUTH_TOKEN,
   );
 
   // Fetch products by storeId if provided, otherwise fetch all products
   const { data: allProducts, isLoading: isLoadingAllProducts } = useProducts(
-    searchQuery ? { search: searchQuery } : undefined
+    searchQuery ? { search: searchQuery } : undefined,
   );
-  
-  const { data: storeProducts, isLoading: isLoadingStoreProducts } = useStoreProducts(storeId);
+
+  const { data: storeProducts, isLoading: isLoadingStoreProducts } =
+    useStoreProducts(storeId);
 
   // Determine which products to show
   const displayProducts = storeId ? storeProducts : allProducts;
-  const isLoadingProducts = storeId ? isLoadingStoreProducts : isLoadingAllProducts;
+  const isLoadingProducts = storeId
+    ? isLoadingStoreProducts
+    : isLoadingAllProducts;
 
   const handleStorePress = (selectedStoreId: string) => {
     router.push({
       pathname: "/products",
-      params: { 
+      params: {
         category: categoryFilter,
-        storeId: selectedStoreId 
-      }
+        storeId: selectedStoreId,
+      },
     } as any);
   };
 
@@ -138,7 +137,7 @@ export default function ProductsScreen() {
                 <Store size={32} color="#D1D5DB" strokeWidth={1.5} />
               </View>
             )}
-            
+
             {/* Verified Badge */}
             {item.isVerified && (
               <View className="absolute top-2 left-2">
@@ -161,9 +160,9 @@ export default function ProductsScreen() {
 
             {/* Status Badge */}
             <View className="absolute bottom-2 right-2">
-              <View 
+              <View
                 className={`px-2 py-1 rounded-full ${
-                  item.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'
+                  item.status === "ACTIVE" ? "bg-green-500" : "bg-gray-500"
                 }`}
               >
                 <Text className="text-white text-xs font-semibold">
@@ -177,7 +176,10 @@ export default function ProductsScreen() {
           <View className="flex-1 p-4 justify-between">
             {/* Name and Address */}
             <View>
-              <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
+              <Text
+                className="text-lg font-bold text-gray-900"
+                numberOfLines={1}
+              >
                 {item.name}
               </Text>
               <Text className="text-sm text-gray-500 mt-1" numberOfLines={1}>
@@ -205,14 +207,15 @@ export default function ProductsScreen() {
   const renderProduct = ({ item }: { item: Product }) => {
     const isService = item.category === "Service";
     const hasDiscount = item.offers && item.offers.length > 0;
-    
+
     // Calculate final price - use finalPrice if it exists, otherwise use price
     const displayPrice = item.finalPrice || parseFloat(item.price);
     const originalPrice = parseFloat(item.price);
-    
-    const discountPercent = hasDiscount && item.finalPrice
-      ? Math.round(((originalPrice - item.finalPrice) / originalPrice) * 100)
-      : 0;
+
+    const discountPercent =
+      hasDiscount && item.finalPrice
+        ? Math.round(((originalPrice - item.finalPrice) / originalPrice) * 100)
+        : 0;
 
     return (
       <Pressable
@@ -232,7 +235,7 @@ export default function ProductsScreen() {
             {item.images && item.images.length > 0 ? (
               <>
                 <Image
-                   source={{ uri: `${S3_BASE_URL}/${item.images[0]}` }}
+                  source={{ uri: item.images[0] }}
                   className="w-full h-full"
                   resizeMode="cover"
                 />
@@ -261,7 +264,7 @@ export default function ProductsScreen() {
                 <ShoppingBag size={32} color="#D1D5DB" strokeWidth={1.5} />
               </View>
             )}
-            
+
             {/* Service Badge */}
             {isService && (
               <View className="absolute top-2 left-2">
@@ -275,9 +278,7 @@ export default function ProductsScreen() {
                     borderRadius: 12,
                   }}
                 >
-                  <Text className="text-white text-xs font-bold">
-                    Service
-                  </Text>
+                  <Text className="text-white text-xs font-bold">Service</Text>
                 </LinearGradient>
               </View>
             )}
@@ -307,7 +308,10 @@ export default function ProductsScreen() {
           <View className="flex-1 p-4 justify-between">
             {/* Name and Description */}
             <View>
-              <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
+              <Text
+                className="text-lg font-bold text-gray-900"
+                numberOfLines={1}
+              >
                 {item.name}
               </Text>
               <Text className="text-sm text-gray-500 mt-1" numberOfLines={2}>
@@ -322,9 +326,7 @@ export default function ProductsScreen() {
                   ₹{displayPrice}
                 </Text>
                 {isService && (
-                  <Text className="text-xs text-gray-600 ml-1">
-                    /hr
-                  </Text>
+                  <Text className="text-xs text-gray-600 ml-1">/hr</Text>
                 )}
                 {!isService && hasDiscount && item.finalPrice && (
                   <Text className="text-sm text-gray-400 line-through ml-2">
@@ -380,7 +382,7 @@ export default function ProductsScreen() {
         colors={["#2563EB", "#1D4ED8"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ paddingTop: insets.top + 16, paddingBottom: 20 }}
+        style={{ paddingTop: 16, paddingBottom: 20 }}
       >
         <View className="px-6">
           <View className="flex-row items-center justify-between mb-4">
@@ -392,23 +394,24 @@ export default function ProductsScreen() {
             </Pressable>
             <View className="flex-1 items-center">
               <Text className="text-2xl font-bold text-white">
-                {showingStores 
+                {showingStores
                   ? `${categoryFilter} Stores`
                   : storeId
-                  ? "Products"
-                  : "All Products"
-                }
+                    ? "Products"
+                    : "All Products"}
               </Text>
               {showingStores && stores.length > 0 && (
                 <Text className="text-blue-100 text-sm mt-0.5">
                   {stores.length} stores
                 </Text>
               )}
-              {showingProducts && displayProducts && displayProducts.length > 0 && (
-                <Text className="text-blue-100 text-sm mt-0.5">
-                  {displayProducts.length} items
-                </Text>
-              )}
+              {showingProducts &&
+                displayProducts &&
+                displayProducts.length > 0 && (
+                  <Text className="text-blue-100 text-sm mt-0.5">
+                    {displayProducts.length} items
+                  </Text>
+                )}
             </View>
             <View className="w-12" />
           </View>
@@ -468,7 +471,7 @@ export default function ProductsScreen() {
               <X size={16} color="#1D4ED8" strokeWidth={3} />
             </Pressable>
           )}
-          
+
           {storeId && (
             <Pressable
               onPress={clearStoreFilter}
@@ -497,7 +500,9 @@ export default function ProductsScreen() {
           {isLoadingStores ? (
             <View className="flex-1 items-center justify-center">
               <ActivityIndicator size="large" color="#2563EB" />
-              <Text className="text-gray-500 mt-4 font-medium">Loading stores...</Text>
+              <Text className="text-gray-500 mt-4 font-medium">
+                Loading stores...
+              </Text>
             </View>
           ) : stores.length > 0 ? (
             <FlatList
@@ -529,7 +534,9 @@ export default function ProductsScreen() {
           {isLoadingProducts ? (
             <View className="flex-1 items-center justify-center">
               <ActivityIndicator size="large" color="#2563EB" />
-              <Text className="text-gray-500 mt-4 font-medium">Loading products...</Text>
+              <Text className="text-gray-500 mt-4 font-medium">
+                Loading products...
+              </Text>
             </View>
           ) : displayProducts && displayProducts.length > 0 ? (
             <FlatList
