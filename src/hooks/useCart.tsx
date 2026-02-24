@@ -13,7 +13,6 @@ export function useCart() {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Form state
   const [address, setAddress] = useState({
     street: "",
     city: "",
@@ -27,48 +26,129 @@ export function useCart() {
     queryFn: getCart,
   });
 
+  /* ================= UPDATE QUANTITY ================= */
+
   const updateQuantityMutation = useMutation({
-    mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
-      updateCartItemQuantity(itemId, quantity),
-    onMutate: ({ itemId }) =>
-      setUpdatingItems((prev) => new Set(prev).add(itemId)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
-    onSettled: (_, __, { itemId }) =>
-      setUpdatingItems((prev) => {
-        const next = new Set(prev);
-        next.delete(itemId);
-        return next;
-      }),
+    mutationFn: ({
+      itemId,
+      quantity,
+    }: {
+      itemId: string;
+      quantity: number;
+    }) => updateCartItemQuantity(itemId, quantity),
+
+    onMutate: async ({ itemId, quantity }) => {
+      await queryClient.cancelQueries({ queryKey: ["cart"] });
+
+      const previous = queryClient.getQueryData<any>(["cart"]);
+
+      // optimistic update
+      queryClient.setQueryData(["cart"], (old: any) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          items: old.items.map((item: any) =>
+            item._id?.toString() === itemId
+              ? { ...item, quantity }
+              : item
+          ),
+        };
+      });
+
+      // mark item updating
+      setUpdatingItems((prev) => new Set(prev).add(itemId));
+
+      return { previous, itemId };
+    },
+
+    onError: (_, __, context: any) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["cart"], context.previous);
+      }
+    },
+
+    onSuccess: (updatedCart) => {
+      // sync with server truth
+      queryClient.setQueryData(["cart"], updatedCart);
+    },
+
+    onSettled: (_, __, context: any) => {
+      if (context?.itemId) {
+        setUpdatingItems((prev) => {
+          const next = new Set(prev);
+          next.delete(context.itemId);
+          return next;
+        });
+      }
+    },
   });
+
+  /* ================= REMOVE ITEM ================= */
 
   const removeItemMutation = useMutation({
     mutationFn: (itemId: string) => removeCartItem(itemId),
-    onMutate: (itemId: string) =>
-      setUpdatingItems((prev) => new Set(prev).add(itemId)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
-    onSettled: (_, __, itemId) =>
-      setUpdatingItems((prev) => {
-        const next = new Set(prev);
-        next.delete(itemId);
-        return next;
-      }),
+
+    onMutate: async (itemId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["cart"] });
+
+      const previous = queryClient.getQueryData<any>(["cart"]);
+
+      queryClient.setQueryData(["cart"], (old: any) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          items: old.items.filter(
+            (item: any) => item._id?.toString() !== itemId
+          ),
+        };
+      });
+
+      setUpdatingItems((prev) => new Set(prev).add(itemId));
+
+      return { previous, itemId };
+    },
+
+    onError: (_, __, context: any) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["cart"], context.previous);
+      }
+    },
+
+    onSettled: (_, __, context: any) => {
+      if (context?.itemId) {
+        setUpdatingItems((prev) => {
+          const next = new Set(prev);
+          next.delete(context.itemId);
+          return next;
+        });
+      }
+    },
   });
+
+  /* ================= PLACE ORDER ================= */
 
   const placeOrderMutation = useMutation({
     mutationFn: placeOrder,
+
     onSuccess: () => {
-      console.debug("placeOrder: success");
       queryClient.invalidateQueries({ queryKey: ["cart"] });
-      // Close checkout modal first, then open success modal after a short delay to avoid modal overlap issues
+
       setShowCheckoutModal(false);
       setTimeout(() => setShowSuccessModal(true), 250);
-      setAddress({ street: "", city: "", zipCode: "", phone: "", notes: "" });
-    },
-    onError: (err: any) => {
-      console.error("placeOrder failed", err);
-      alert("Failed to place order. Please try again.");
+
+      setAddress({
+        street: "",
+        city: "",
+        zipCode: "",
+        phone: "",
+        notes: "",
+      });
     },
   });
+
+  /* ================= HELPERS ================= */
 
   const parseNumber = (v: any) => {
     if (v == null) return 0;
@@ -81,9 +161,11 @@ export function useCart() {
   const total =
     cart?.items?.reduce((sum: number, item: any) => {
       const price = parseNumber(item.productId?.price ?? item.price ?? 0);
-      const qty = parseNumber(item.quantity ?? item.qty ?? 0);
+      const qty = parseNumber(item.quantity ?? 0);
       return sum + price * qty;
     }, 0) || 0;
+
+  /* ================= RETURN ================= */
 
   return {
     cart,
@@ -96,24 +178,27 @@ export function useCart() {
     setShowSuccessModal,
     address,
     setAddress,
-    handleQuantityChange: (id: string, cur: number, d: number) => {
-      const next = cur + d;
-      if (next >= 1)
+
+    handleQuantityChange: (id: string, cur: number, delta: number) => {
+      const next = cur + delta;
+      if (next >= 1) {
         updateQuantityMutation.mutate({ itemId: id, quantity: next });
+      }
     },
-    handleRemoveItem: (id: string) => removeItemMutation.mutate(id),
+
+    handleRemoveItem: (id: string) => {
+      removeItemMutation.mutate(id);
+    },
+
     handleCheckout: () => {
-      if (
-        !address.street ||
-        !address.city ||
-        !address.zipCode ||
-        !address.phone
-      ) {
+      if (!address.street || !address.city || !address.zipCode || !address.phone) {
         alert("Please fill in all required fields");
         return;
       }
+
       placeOrderMutation.mutate(address);
     },
+
     isPlacingOrder: placeOrderMutation.isPending,
     parseNumber,
   };

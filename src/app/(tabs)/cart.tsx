@@ -1,27 +1,46 @@
-import React from "react";
-import { FlatList, Text, View, Pressable, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ShoppingBag, ArrowRight } from "lucide-react-native";
-import { useCart } from "../../hooks/useCart";
+import { ArrowRight, ShoppingBag } from "lucide-react-native";
+import React from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { CartItem } from "../../components/cart/CartItem";
 import { CheckoutModal } from "../../components/cart/CheckoutModal";
 import { SuccessModal } from "../../components/cart/SuccessModal";
+import { useCart } from "../../hooks/useCart";
 
 export default function Cart() {
   const router = useRouter();
   const {
-    cart, isLoading, total, updatingItems, showCheckoutModal, setShowCheckoutModal,
-    showSuccessModal, setShowSuccessModal, address, setAddress, handleQuantityChange,
-    handleRemoveItem, handleCheckout, isPlacingOrder, parseNumber
+    cart,
+    isLoading,
+    total,
+    updatingItems,
+    showCheckoutModal,
+    setShowCheckoutModal,
+    showSuccessModal,
+    setShowSuccessModal,
+    address,
+    setAddress,
+    handleQuantityChange,
+    handleRemoveItem,
+    handleCheckout,
+    isPlacingOrder,
+    parseNumber,
   } = useCart();
 
-  if (isLoading) return (
-    <View className="flex-1 items-center justify-center bg-gray-50">
-      <ActivityIndicator size="large" color="#1877F2" />
-      <Text className="text-gray-600 mt-4">Loading your cart...</Text>
-    </View>
-  );
+  if (isLoading)
+    return (
+      <View className="flex-1 items-center justify-center bg-gray-50">
+        <ActivityIndicator size="large" color="#1877F2" />
+        <Text className="text-gray-600 mt-4">Loading your cart...</Text>
+      </View>
+    );
 
   const isEmpty = !cart || !cart.items?.length;
 
@@ -29,28 +48,41 @@ export default function Cart() {
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-gray-50">
       <View className="bg-white px-6 py-4 border-b border-gray-200">
         <Text className="text-2xl font-bold text-gray-800">Shopping Cart</Text>
-        {!isEmpty && <Text className="text-gray-500 mt-1">{cart.items.length} items</Text>}
+        {!isEmpty && (
+          <Text className="text-gray-500 mt-1">{cart.items.length} items</Text>
+        )}
       </View>
 
       {isEmpty ? (
         <View className="flex-1 items-center justify-center px-6">
-          <View className="bg-blue-50 rounded-full p-6 mb-6"><ShoppingBag size={64} color="#1877F2" /></View>
-          <Text className="text-2xl font-bold text-gray-800 mb-2">Your cart is empty</Text>
-          <Pressable onPress={() => router.push("/home")} className="bg-blue-600 px-8 py-4 rounded-xl flex-row items-center">
-            <Text className="text-white font-semibold mr-2">Start Shopping</Text><ArrowRight size={20} color="white" />
+          <View className="bg-blue-50 rounded-full p-6 mb-6">
+            <ShoppingBag size={64} color="#1877F2" />
+          </View>
+          <Text className="text-2xl font-bold text-gray-800 mb-2">
+            Your cart is empty
+          </Text>
+          <Pressable
+            onPress={() => router.push("/home")}
+            className="bg-blue-600 px-8 py-4 rounded-xl flex-row items-center"
+          >
+            <Text className="text-white font-semibold mr-2">
+              Start Shopping
+            </Text>
+            <ArrowRight size={20} color="white" />
           </Pressable>
         </View>
       ) : (
         <>
           <FlatList
             data={cart.items}
+            extraData={cart}
             keyExtractor={(item) => item._id}
             contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
             renderItem={({ item }) => (
-              <CartItem 
-                item={item} 
-                isUpdating={updatingItems.has(item._id)} 
-                onQuantityChange={handleQuantityChange} 
+              <CartItem
+                item={item}
+                isUpdating={updatingItems.has(item._id)}
+                onQuantityChange={handleQuantityChange}
                 onRemove={handleRemoveItem}
                 parseNumber={parseNumber}
               />
@@ -58,25 +90,43 @@ export default function Cart() {
           />
           <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-6">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-xl font-bold text-gray-800">Total Amount</Text>
-              <Text className="text-2xl font-bold text-blue-600">₹{total.toFixed(2)}</Text>
+              <Text className="text-xl font-bold text-gray-800">
+                Total Amount
+              </Text>
+              <Text className="text-2xl font-bold text-blue-600">
+                ₹{total.toFixed(2)}
+              </Text>
             </View>
-            <Pressable onPress={() => setShowCheckoutModal(true)} className="bg-blue-600 py-4 rounded-xl flex-row items-center justify-center">
-              <Text className="text-white font-bold text-lg mr-2">Proceed to Checkout</Text><ArrowRight size={24} color="white" />
+            <Pressable
+              onPress={() => setShowCheckoutModal(true)}
+              className="bg-blue-600 py-4 rounded-xl flex-row items-center justify-center"
+            >
+              <Text className="text-white font-bold text-lg mr-2">
+                Proceed to Checkout
+              </Text>
+              <ArrowRight size={24} color="white" />
             </Pressable>
           </View>
         </>
       )}
 
-      <CheckoutModal 
-        visible={showCheckoutModal} onClose={() => setShowCheckoutModal(false)}
-        address={address} setAddress={setAddress} onConfirm={handleCheckout}
-        isPending={isPlacingOrder} total={total} itemSCount={cart?.items?.length}
+      <CheckoutModal
+        visible={showCheckoutModal}
+        onClose={() => setShowCheckoutModal(false)}
+        address={address}
+        setAddress={setAddress}
+        onConfirm={handleCheckout}
+        isPending={isPlacingOrder}
+        total={total}
+        itemSCount={cart?.items?.length}
       />
 
-      <SuccessModal 
-        visible={showSuccessModal} 
-        onClose={() => { setShowSuccessModal(false); router.push("/home"); }} 
+      <SuccessModal
+        visible={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.push("/home");
+        }}
       />
     </SafeAreaView>
   );

@@ -23,6 +23,7 @@ export const cancelOrder = async (orderId: string) => {
 // Add these functions to your services/orders.api.ts file
 
 export async function updateCartItemQuantity(itemId: string, quantity: number) {
+  // backend now exposes PATCH /customer/cart/:itemId
   const response = await api.patch(`/customer/cart/${itemId}`, { quantity });
   return response.data;
 }
