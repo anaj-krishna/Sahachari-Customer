@@ -15,6 +15,9 @@ import {
 import { useCategoryStores } from "../../hooks/Usecategorystores";
 import { useProducts } from "../../hooks/useProducts";
 import { useStoreProducts } from "../../hooks/useStoreProducts";
+import React from 'react';
+import { StyleSheet } from 'react-native';
+
 interface Store {
   _id: string;
   name: string;
@@ -29,7 +32,7 @@ interface Product {
   _id?: string;
   id?: string;
   name: string;
-  description: string;
+  description?: string;
   category: string;
   price: string;
   finalPrice?: number;
@@ -542,7 +545,7 @@ export default function ProductsScreen() {
             <FlatList
               data={displayProducts}
               renderItem={renderProduct}
-              keyExtractor={(item) => item._id || item.id}
+              keyExtractor={(item) => item._id || item.id || Math.random().toString()}
               contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
               showsVerticalScrollIndicator={false}
             />
@@ -566,3 +569,8 @@ export default function ProductsScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { padding: 16 },
+});
