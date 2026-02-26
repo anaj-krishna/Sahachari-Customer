@@ -35,7 +35,9 @@ const getStatusEmoji = (status: string) => {
   return emojis[status] || '📋';
 };
 
-export function OrderCard({ item, onPress }: any) {
+export const OrderCard = ({ order, onPress, isCancelling }: Props) => {
+  if (!order) return null;
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-IN', {
@@ -46,10 +48,7 @@ export function OrderCard({ item, onPress }: any) {
   };
 
   return (
-    <Pressable 
-      onPress={() => onPress(item._id)}
-      className="bg-white rounded-3xl shadow-lg overflow-hidden active:scale-98"
-    >
+    <View>
       {/* Header with gradient */}
       <View className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5">
         <View className="flex-row justify-between items-start mb-3">
@@ -58,13 +57,13 @@ export function OrderCard({ item, onPress }: any) {
               Order ID
             </Text>
             <Text className="text-lg font-bold text-gray-800" numberOfLines={1}>
-              #{item.checkoutId}
+              #{order.checkoutId}
             </Text>
           </View>
-          <View className={`px-4 py-2 rounded-full flex-row items-center ${getStatusColor(item.status)} shadow-sm`}>
-            <Text className="text-xl mr-1">{getStatusEmoji(item.status)}</Text>
-            <Text className={`font-bold text-xs uppercase ${getStatusTextColor(item.status)}`}>
-              {item.status}
+          <View className={`px-4 py-2 rounded-full flex-row items-center ${getStatusColor(order.status)} shadow-sm`}>
+            <Text className="text-xl mr-1">{getStatusEmoji(order.status)}</Text>
+            <Text className={`font-bold text-xs uppercase ${getStatusTextColor(order.status)}`}>
+              {order.status}
             </Text>
           </View>
         </View>
@@ -78,11 +77,11 @@ export function OrderCard({ item, onPress }: any) {
               <Package size={16} color="#10B981" />
             </View>
             <Text className="text-base font-bold text-gray-800">
-              {item.items?.length} {item.items?.length === 1 ? 'Item' : 'Items'}
+              {order.items?.length} {order.items?.length === 1 ? 'Item' : 'Items'}
             </Text>
           </View>
           
-          {item.items?.slice(0, 2).map((orderItem: any, idx: number) => (
+          {order.items?.slice(0, 2).map((orderItem: any, idx: number) => (
             <View key={idx} className="flex-row items-center mb-2">
               <Image
                 source={{ uri: orderItem.productId?.images?.[0] }}
@@ -102,9 +101,9 @@ export function OrderCard({ item, onPress }: any) {
             </View>
           ))}
           
-          {item.items?.length > 2 && (
+          {order.items?.length > 2 && (
             <Text className="text-xs text-blue-600 font-semibold text-center mt-1">
-              +{item.items.length - 2} more items
+              +{order.items.length - 2} more items
             </Text>
           )}
         </View>
@@ -119,7 +118,7 @@ export function OrderCard({ item, onPress }: any) {
               <Text className="text-sm text-gray-600">Total Amount</Text>
             </View>
             <Text className="text-xl font-bold text-blue-600">
-              ₹{item.totalAmount?.toFixed(2)}
+              ₹{order.totalAmount?.toFixed(2)}
             </Text>
           </View>
 
@@ -131,7 +130,7 @@ export function OrderCard({ item, onPress }: any) {
               <Text className="text-sm text-gray-600">Order Date</Text>
             </View>
             <Text className="text-sm font-semibold text-gray-700">
-              {formatDate(item.createdAt)}
+              {formatDate(order.createdAt)}
             </Text>
           </View>
 
@@ -142,6 +141,12 @@ export function OrderCard({ item, onPress }: any) {
           </Pressable> */}
         </View>
       </View>
-    </Pressable>
+    </View>
   );
-}
+};
+
+type Props = {
+  order: any;
+  onPress: (id: string) => void;
+  isCancelling: boolean;
+};

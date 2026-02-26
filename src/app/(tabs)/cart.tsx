@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   Text,
   View,
 } from "react-native";
@@ -13,6 +14,7 @@ import { CartItem } from "../../components/cart/CartItem";
 import { CheckoutModal } from "../../components/cart/CheckoutModal";
 import { SuccessModal } from "../../components/cart/SuccessModal";
 import { useCart } from "../../hooks/useCart";
+import { useSmartRefresh } from "../../hooks/useSmartRefresh";
 
 export default function Cart() {
   const router = useRouter();
@@ -32,7 +34,12 @@ export default function Cart() {
     handleCheckout,
     isPlacingOrder,
     parseNumber,
+    refetch,
   } = useCart();
+
+  const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
+    await refetch();
+  });
 
   if (isLoading)
     return (
@@ -62,7 +69,7 @@ export default function Cart() {
             Your cart is empty
           </Text>
           <Pressable
-            onPress={() => router.push("/home")}
+            onPress={() => router.push("/(tabs)/home")}
             className="bg-blue-600 px-8 py-4 rounded-xl flex-row items-center"
           >
             <Text className="text-white font-semibold mr-2">
@@ -78,6 +85,9 @@ export default function Cart() {
             extraData={cart}
             keyExtractor={(item) => item._id}
             contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+            refreshControl={<RefreshControl {...getRefreshControlProps()} />}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
             renderItem={({ item }) => (
               <CartItem
                 item={item}

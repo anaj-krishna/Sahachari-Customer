@@ -1,21 +1,53 @@
 // app/(tabs)/orders/index.tsx
 import { useRouter } from "expo-router";
 import { AlertCircle, RefreshCw, ShoppingBag } from "lucide-react-native";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import React from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  Text,
+  View,
+  FlatList,
+  StyleSheet,
+  RefreshControl,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { OrderCard } from "../../components/orders/OrderCard";
 import { OrderDetailsModal } from "../../components/orders/OrderDetailsModal";
 import { useOrders } from "../../hooks/useOrders";
-import React from 'react';
-import { View, FlatList, StyleSheet } from 'react-native'; // also import StyleSheet
+import { useSmartRefresh } from "../../hooks/useSmartRefresh";
 
 export default function Orders() {
   const router = useRouter();
-  const { 
-    orders, isLoading, error, selectedOrder, isLoadingDetails, 
-    showDetailsModal, isCancelling, handleOrderPress, handleCancelOrder, 
-    handleCloseModal, refetch 
+  const {
+    orders,
+    isLoading,
+    error,
+    selectedOrder,
+    isLoadingDetails,
+    showDetailsModal,
+    isCancelling,
+    handleOrderPress,
+    handleCancelOrder,
+    handleCloseModal,
+    refetch,
   } = useOrders();
+
+  const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
+    await refetch();
+  });
+
+  const renderOrder = ({ item }: { item: any }) => {
+    if (!item) return null;
+
+    return (
+      <OrderCard
+        order={item}
+        onPress={() => handleOrderPress(item)}
+        isCancelling={isCancelling && selectedOrder?._id === item._id}
+      />
+    );
+  };
 
   if (isLoading) {
     return (
@@ -78,12 +110,15 @@ export default function Orders() {
         style={styles.container}
         data={orders}
         renderItem={renderOrder}
-        keyExtractor={o => o.id}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            {/* any header content you had */}
-          </View>
+        keyExtractor={(o: any) =>
+          o?._id?.toString?.() ?? String(o?.id)
         }
+        refreshControl={
+          <RefreshControl {...getRefreshControlProps()} />
+        }
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        ListHeaderComponent={<View style={styles.header} />}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View className="h-3" />}
       />

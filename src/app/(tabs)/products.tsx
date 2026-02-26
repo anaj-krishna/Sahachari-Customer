@@ -1,22 +1,23 @@
 import { useAuthStore } from "@/store/auth.store";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Search, ShoppingBag, Store, X } from "lucide-react-native";
-import { useState } from "react";
+import { ShoppingBag, Store as StoreIcon } from "lucide-react-native";
+import React from "react";
 import {
   ActivityIndicator,
   FlatList,
   Image,
   Pressable,
   Text,
-  TextInput,
   View,
+  RefreshControl,
+  StyleSheet,
 } from "react-native";
 import { useCategoryStores } from "../../hooks/Usecategorystores";
 import { useProducts } from "../../hooks/useProducts";
 import { useStoreProducts } from "../../hooks/useStoreProducts";
-import React from 'react';
-import { StyleSheet } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useSmartRefresh } from "../../hooks/useSmartRefresh";
 
 interface Store {
   _id: string;
@@ -45,33 +46,62 @@ interface Product {
 export default function ProductsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const categoryFilter = params.category as string | undefined;
-  const storeId = params.storeId as string | undefined;
+  const categoryFilter =
+    typeof params.category === "string" ? params.category : undefined;
+  const storeId =
+    typeof params.storeId === "string" ? params.storeId : undefined;
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchQuery = "";
   const { token } = useAuthStore();
-  // Your auth token - replace with actual token from your auth system
-  const AUTH_TOKEN = token;
+  const AUTH_TOKEN = token ?? undefined;
   const S3_BASE_URL = process.env.EXPO_PUBLIC_S3_BASE_URL;
   // Fetch category stores when category is provided but no storeId
-  const { data: stores = [], isLoading: isLoadingStores } = useCategoryStores(
-    categoryFilter && !storeId ? categoryFilter : undefined,
+  const {
+    data: stores = [],
+    isLoading: isLoadingStores,
+    refetch: refetchStores,
+  } = useCategoryStores(
+    !storeId ? categoryFilter ?? undefined : undefined,
     AUTH_TOKEN,
   );
 
   // Fetch products by storeId if provided, otherwise fetch all products
-  const { data: allProducts, isLoading: isLoadingAllProducts } = useProducts(
+  const {
+    data: allProducts,
+    isLoading: isLoadingAllProducts,
+    refetch: refetchAllProducts,
+  } = useProducts(
     searchQuery ? { search: searchQuery } : undefined,
   );
 
-  const { data: storeProducts, isLoading: isLoadingStoreProducts } =
-    useStoreProducts(storeId);
+  const {
+    data: storeProducts,
+    isLoading: isLoadingStoreProducts,
+    refetch: refetchStoreProducts,
+  } = useStoreProducts(storeId);
 
   // Determine which products to show
   const displayProducts = storeId ? storeProducts : allProducts;
   const isLoadingProducts = storeId
     ? isLoadingStoreProducts
     : isLoadingAllProducts;
+  const products = Array.isArray(displayProducts) ? displayProducts : [];
+
+  // Determine what to show based on params
+  const showingStores = Boolean(categoryFilter && !storeId);
+
+  const listData = showingStores ? stores : products;
+
+  const listKeyExtractor = (item: any, index: number) => {
+    if (showingStores) {
+      return item?._id?.toString?.() ?? String(index);
+    }
+    return item?._id?.toString?.() ?? item?.id?.toString?.() ?? String(index);
+  };
+
+  const renderListItem = ({ item }: { item: any }) => {
+    return showingStores ? renderStore({ item }) : renderProduct({ item });
+  };
 
   const handleStorePress = (selectedStoreId: string) => {
     router.push({
@@ -87,18 +117,6 @@ export default function ProductsScreen() {
     // Use _id if available, fallback to id
     const productId = product._id || product.id;
     router.push(`/product/${productId}` as any);
-  };
-
-  const clearSearch = () => {
-    setSearchQuery("");
-  };
-
-  const clearCategoryFilter = () => {
-    router.setParams({ category: undefined, storeId: undefined });
-  };
-
-  const clearStoreFilter = () => {
-    router.setParams({ storeId: undefined });
   };
 
   const renderStore = ({ item }: { item: Store }) => {
@@ -137,7 +155,7 @@ export default function ProductsScreen() {
               </>
             ) : (
               <View className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 items-center justify-center">
-                <Store size={32} color="#D1D5DB" strokeWidth={1.5} />
+                <StoreIcon size={32} color="#D1D5DB" strokeWidth={1.5} />
               </View>
             )}
 
@@ -374,199 +392,52 @@ export default function ProductsScreen() {
     );
   };
 
-  // Determine what to show based on params
-  const showingStores = categoryFilter && !storeId;
-  const showingProducts = storeId || !categoryFilter;
+  const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
+    if (showingStores) {
+      await refetchStores();
+      return;
+    }
+    if (storeId) {
+      await refetchStoreProducts();
+      return;
+    }
+    await refetchAllProducts();
+  });
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Premium Header with Gradient */}
-      <LinearGradient
-        colors={["#2563EB", "#1D4ED8"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ paddingTop: 16, paddingBottom: 20 }}
-      >
-        <View className="px-6">
-          <View className="flex-row items-center justify-between mb-4">
-            <Pressable
-              onPress={() => router.back()}
-              className="bg-white/20 rounded-full p-2.5 backdrop-blur-sm"
-            >
-              <ArrowLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
-            </Pressable>
-            <View className="flex-1 items-center">
-              <Text className="text-2xl font-bold text-white">
-                {showingStores
-                  ? `${categoryFilter} Stores`
-                  : storeId
-                    ? "Products"
-                    : "All Products"}
-              </Text>
-              {showingStores && stores.length > 0 && (
-                <Text className="text-blue-100 text-sm mt-0.5">
-                  {stores.length} stores
-                </Text>
-              )}
-              {showingProducts &&
-                displayProducts &&
-                displayProducts.length > 0 && (
-                  <Text className="text-blue-100 text-sm mt-0.5">
-                    {displayProducts.length} items
-                  </Text>
-                )}
-            </View>
-            <View className="w-12" />
+    <SafeAreaView style={{ flex: 1 }}>
+      <FlatList
+        style={styles.container}
+        data={listData}
+        renderItem={renderListItem}
+        keyExtractor={listKeyExtractor}
+        refreshControl={<RefreshControl {...getRefreshControlProps()} />}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text className="text-3xl font-bold text-gray-800 mb-1">
+              {showingStores ? "Stores" : "All Products"}
+            </Text>
+            <Text className="text-gray-500 font-medium">
+              {listData.length} {showingStores ? "stores" : "items"}
+            </Text>
           </View>
-
-          {/* Premium Search Bar - Only show for products */}
-          {showingProducts && (
-            <View
-              className="bg-white rounded-2xl flex-row items-center px-4 py-3.5"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
-              }}
-            >
-              <Search size={20} color="#9CA3AF" strokeWidth={2} />
-              <TextInput
-                placeholder="Search products..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                className="flex-1 ml-3 text-gray-900 text-base"
-                placeholderTextColor="#9CA3AF"
-              />
-              {searchQuery.length > 0 && (
-                <Pressable
-                  onPress={clearSearch}
-                  className="bg-gray-100 rounded-full p-1"
-                >
-                  <X size={16} color="#6B7280" strokeWidth={2.5} />
-                </Pressable>
-              )}
+        }
+        ListEmptyComponent={
+          isLoadingStores || isLoadingProducts ? (
+            <View className="py-10 items-center">
+              <ActivityIndicator size="large" color="#2563eb" />
             </View>
-          )}
-        </View>
-      </LinearGradient>
-
-      {/* Breadcrumb Filters */}
-      {(categoryFilter || storeId) && (
-        <View className="px-4 pt-4 pb-2 flex-row flex-wrap gap-2">
-          {categoryFilter && (
-            <Pressable
-              onPress={clearCategoryFilter}
-              className="flex-row items-center px-4 py-2.5 rounded-full"
-              style={{
-                backgroundColor: "#DBEAFE",
-                shadowColor: "#2563EB",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.15,
-                shadowRadius: 4,
-                elevation: 2,
-              }}
-            >
-              <Text className="text-blue-700 font-semibold mr-2">
-                {categoryFilter}
-              </Text>
-              <X size={16} color="#1D4ED8" strokeWidth={3} />
-            </Pressable>
-          )}
-
-          {storeId && (
-            <Pressable
-              onPress={clearStoreFilter}
-              className="flex-row items-center px-4 py-2.5 rounded-full"
-              style={{
-                backgroundColor: "#FEF3C7",
-                shadowColor: "#F59E0B",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.15,
-                shadowRadius: 4,
-                elevation: 2,
-              }}
-            >
-              <Text className="text-amber-700 font-semibold mr-2">
-                Store Products
-              </Text>
-              <X size={16} color="#D97706" strokeWidth={3} />
-            </Pressable>
-          )}
-        </View>
-      )}
-
-      {/* Stores List */}
-      {showingStores && (
-        <>
-          {isLoadingStores ? (
-            <View className="flex-1 items-center justify-center">
-              <ActivityIndicator size="large" color="#2563EB" />
-              <Text className="text-gray-500 mt-4 font-medium">
-                Loading stores...
-              </Text>
-            </View>
-          ) : stores.length > 0 ? (
-            <FlatList
-              data={stores}
-              renderItem={renderStore}
-              keyExtractor={(item) => item._id}
-              contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
-              showsVerticalScrollIndicator={false}
-            />
           ) : (
-            <View className="flex-1 items-center justify-center px-6">
-              <View className="bg-white rounded-3xl p-8 items-center shadow-lg">
-                <Text className="text-7xl mb-4">🏪</Text>
-                <Text className="text-xl font-bold text-gray-900 mb-2">
-                  No stores found
-                </Text>
-                <Text className="text-gray-500 text-center text-base leading-6">
-                  No stores available in "{categoryFilter}" category
-                </Text>
-              </View>
+            <View className="py-10 items-center">
+              <Text className="text-gray-500">No items found</Text>
             </View>
-          )}
-        </>
-      )}
-
-      {/* Products List */}
-      {showingProducts && (
-        <>
-          {isLoadingProducts ? (
-            <View className="flex-1 items-center justify-center">
-              <ActivityIndicator size="large" color="#2563EB" />
-              <Text className="text-gray-500 mt-4 font-medium">
-                Loading products...
-              </Text>
-            </View>
-          ) : displayProducts && displayProducts.length > 0 ? (
-            <FlatList
-              data={displayProducts}
-              renderItem={renderProduct}
-              keyExtractor={(item) => item._id || item.id || Math.random().toString()}
-              contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
-              showsVerticalScrollIndicator={false}
-            />
-          ) : (
-            <View className="flex-1 items-center justify-center px-6">
-              <View className="bg-white rounded-3xl p-8 items-center shadow-lg">
-                <Text className="text-7xl mb-4">📦</Text>
-                <Text className="text-xl font-bold text-gray-900 mb-2">
-                  No products found
-                </Text>
-                <Text className="text-gray-500 text-center text-base leading-6">
-                  {searchQuery
-                    ? "Try searching with different keywords"
-                    : "No products available at the moment"}
-                </Text>
-              </View>
-            </View>
-          )}
-        </>
-      )}
-    </View>
+          )
+        }
+        showsVerticalScrollIndicator={false}
+      />
+    </SafeAreaView>
   );
 }
 
