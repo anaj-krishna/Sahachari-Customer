@@ -29,7 +29,8 @@ export function useOrders() {
     onError: () => Alert.alert("Error", "Unable to cancel order"),
   });
 
-  const handleOrderPress = (orderId: string) => {
+  const handleOrderPress = (orderId?: string) => {
+    if (!orderId) return;
     setSelectedOrderId(orderId);
     setShowDetailsModal(true);
   };

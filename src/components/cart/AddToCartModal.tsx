@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Minus, Plus, ShoppingCart, X } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Modal,
@@ -13,6 +13,7 @@ interface AddToCartModalProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: (quantity: number) => Promise<boolean>;
+  initialQuantity?: number;
   product: {
     name: string;
     finalPrice: number;
@@ -26,11 +27,18 @@ export function AddToCartModal({
   visible,
   onClose,
   onConfirm,
+  initialQuantity = 1,
   product,
   isPending = false,
 }: AddToCartModalProps) {
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    const safeInitial = Math.max(1, Math.min(initialQuantity, product.quantity || 1));
+    setQuantity(safeInitial);
+  }, [visible, initialQuantity, product.quantity]);
 
   const incrementQuantity = () => {
     if (quantity < product.quantity) {
@@ -50,14 +58,11 @@ export function AddToCartModal({
     setIsSubmitting(false);
     
     if (success) {
-      // Reset quantity and close modal on success
-      setQuantity(1);
       onClose();
     }
   };
 
   const handleClose = () => {
-    setQuantity(1);
     onClose();
   };
 

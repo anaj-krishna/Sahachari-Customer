@@ -562,6 +562,7 @@ export default function ProductDetails() {
           visible={showQuantityModal}
           onClose={() => setShowQuantityModal(false)}
           onConfirm={handleAddToCartConfirm}
+          initialQuantity={quantity}
           product={{
             name: product.name,
             finalPrice: finalPrice,

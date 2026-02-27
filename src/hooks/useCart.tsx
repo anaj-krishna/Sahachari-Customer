@@ -76,8 +76,7 @@ export function useCart() {
       }
     },
 
-    onSuccess: (updatedCart, variables) => {
-      queryClient.setQueryData(["cart"], updatedCart);
+    onSuccess: (_updatedCart, variables) => {
       setOptimisticQty((prev) => {
         const next = { ...prev };
         delete next[variables.itemId];
@@ -93,6 +92,7 @@ export function useCart() {
           return next;
         });
       }
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
 
@@ -136,6 +136,7 @@ export function useCart() {
           return next;
         });
       }
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
 

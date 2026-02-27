@@ -43,7 +43,7 @@ export default function Orders() {
     return (
       <OrderCard
         order={item}
-        onPress={() => handleOrderPress(item)}
+        onPress={() => handleOrderPress(item?._id ?? item?.id)}
         isCancelling={isCancelling && selectedOrder?._id === item._id}
       />
     );

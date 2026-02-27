@@ -48,7 +48,7 @@ export const OrderCard = ({ order, onPress, isCancelling }: Props) => {
   };
 
   return (
-    <View>
+    <Pressable onPress={onPress} className="bg-white rounded-2xl mx-4 overflow-hidden shadow-sm active:opacity-90">
       {/* Header with gradient */}
       <View className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5">
         <View className="flex-row justify-between items-start mb-3">
@@ -83,14 +83,16 @@ export const OrderCard = ({ order, onPress, isCancelling }: Props) => {
           
           {order.items?.slice(0, 2).map((orderItem: any, idx: number) => (
             <View key={idx} className="flex-row items-center mb-2">
-              <Image
-                source={{ uri: orderItem.productId?.images?.[0] }}
-                className="w-12 h-12 rounded-lg bg-gray-100"
-              />
               <View className="flex-1 ml-3">
-                <Text className="text-sm font-semibold text-gray-800" numberOfLines={1}>
-                  {orderItem.productId?.name}
-                </Text>
+                <View className="flex-row items-center">
+                  <Image
+                    source={{ uri: orderItem.productId?.images?.[0] }}
+                    className="w-5 h-5 rounded-md bg-gray-100 mr-2"
+                  />
+                  <Text className="text-sm font-semibold text-gray-800 flex-1" numberOfLines={1}>
+                    {orderItem.productId?.name}
+                  </Text>
+                </View>
                 <Text className="text-xs text-gray-500">
                   Qty: {orderItem.quantity}
                 </Text>
@@ -141,12 +143,12 @@ export const OrderCard = ({ order, onPress, isCancelling }: Props) => {
           </Pressable> */}
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
 type Props = {
   order: any;
-  onPress: (id: string) => void;
+  onPress: () => void;
   isCancelling: boolean;
 };
