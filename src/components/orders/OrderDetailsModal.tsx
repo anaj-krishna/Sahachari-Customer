@@ -161,21 +161,21 @@ export function OrderDetailsModal({
                   key={idx}
                   className="flex-row mb-4 pb-4 border-b border-gray-100 last:border-b-0 last:mb-0 last:pb-0"
                 >
-                  <View className="relative">
-                    <Image
-                      source={{ uri: item.productId?.images?.[0] }}
-                      className="w-20 h-20 rounded-2xl bg-gray-100"
-                    />
-                    <View className="absolute -top-2 -right-2 bg-blue-600 rounded-full w-6 h-6 items-center justify-center shadow-md">
-                      <Text className="text-white text-xs font-bold">
-                        {item.quantity}
+                  <View className="flex-1 justify-center">
+                    <View className="flex-row items-center mb-1">
+                      <Image
+                        source={{ uri: item.productId?.images?.[0] }}
+                        className="w-6 h-6 rounded-md bg-gray-100 mr-2"
+                      />
+                      <Text className="font-bold text-gray-800 text-base flex-1" numberOfLines={1}>
+                        {item.productId?.name}
                       </Text>
+                      <View className="bg-blue-600 rounded-full w-6 h-6 items-center justify-center ml-2">
+                        <Text className="text-white text-xs font-bold">
+                          {item.quantity}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                  <View className="flex-1 ml-4 justify-center">
-                    <Text className="font-bold text-gray-800 text-base mb-1">
-                      {item.productId?.name}
-                    </Text>
                     <Text className="text-gray-500 text-sm mb-2">
                       {item.quantity} × ₹{item.price?.toFixed(2)}
                     </Text>

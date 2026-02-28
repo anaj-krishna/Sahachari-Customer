@@ -20,6 +20,7 @@ import {
     Dimensions,
     Image,
     Pressable,
+  RefreshControl,
     ScrollView,
     Share,
     Text,
@@ -31,6 +32,7 @@ import { CheckoutModal } from "../../components/cart/CheckoutModal";
 import { SuccessModal } from "../../components/cart/SuccessModal";
 import { useProductActions } from "../../hooks/useProductActions";
 import { useProduct } from "../../hooks/useProducts";
+import { useSmartRefresh } from "../../hooks/useSmartRefresh";
 
 export const unstable_settings = {
   presentation: "card",
@@ -45,6 +47,9 @@ export default function ProductDetails() {
   const insets = useSafeAreaInsets();
 
   const { data: product, isLoading, error, refetch } = useProduct(id);
+  const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
+    await refetch();
+  });
   const {
     loading,
     address,
@@ -230,7 +235,12 @@ export default function ProductDetails() {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl {...getRefreshControlProps()} />}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
         {/* Image Carousel */}
         <View className="bg-gray-50">
           <ScrollView
@@ -552,6 +562,7 @@ export default function ProductDetails() {
           visible={showQuantityModal}
           onClose={() => setShowQuantityModal(false)}
           onConfirm={handleAddToCartConfirm}
+          initialQuantity={quantity}
           product={{
             name: product.name,
             finalPrice: finalPrice,

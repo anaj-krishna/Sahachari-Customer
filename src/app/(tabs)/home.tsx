@@ -20,10 +20,12 @@ import {
     Image,
     Linking,
     Pressable,
+  RefreshControl,
     ScrollView,
     Text,
     View,
 } from "react-native";
+import { useSmartRefresh } from "../../hooks/useSmartRefresh";
 import { useProducts } from "../../hooks/useProducts";
 import { useProfile } from "../../hooks/useProfile";
 
@@ -101,9 +103,13 @@ export default function Home() {
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const { data, isLoading } = useProducts(
+  const { data, isLoading, refetch } = useProducts(
     searchQuery ? { search: searchQuery } : undefined,
   );
+
+  const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
+    await refetch();
+  });
 
   // Extract unique categories from products data
   const categories = useMemo(() => {
@@ -299,6 +305,9 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl {...getRefreshControlProps()} />}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         {/* Ultra Premium Carousel */}
         <View className="mt-8">

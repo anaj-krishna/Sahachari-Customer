@@ -10,6 +10,7 @@ import {
 export function useCart() {
   const queryClient = useQueryClient();
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
+  const [optimisticQty, setOptimisticQty] = useState<Record<string, number>>({});
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -21,7 +22,7 @@ export function useCart() {
     notes: "",
   });
 
-  const { data: cart, isLoading } = useQuery({
+  const { data: cart, isLoading, refetch } = useQuery({
     queryKey: ["cart"],
     queryFn: getCart,
   });
@@ -42,23 +43,23 @@ export function useCart() {
 
       const previous = queryClient.getQueryData<any>(["cart"]);
 
-      // optimistic update
+      // local instant override for total/UI
+      setOptimisticQty((prev) => ({ ...prev, [itemId]: quantity }));
+
       queryClient.setQueryData(["cart"], (old: any) => {
         if (!old) return old;
 
         return {
           ...old,
-          items: old.items.map((item: any) =>
-            item._id?.toString() === itemId
-              ? { ...item, quantity }
-              : item
-          ),
+          items: old.items.map((item: any) => {
+            const keys = getItemKeys(item);
+            const isTarget = keys.includes(itemId);
+            return isTarget ? { ...item, quantity } : item;
+          }),
         };
       });
 
-      // mark item updating
       setUpdatingItems((prev) => new Set(prev).add(itemId));
-
       return { previous, itemId };
     },
 
@@ -66,11 +67,21 @@ export function useCart() {
       if (context?.previous) {
         queryClient.setQueryData(["cart"], context.previous);
       }
+      if (context?.itemId) {
+        setOptimisticQty((prev) => {
+          const next = { ...prev };
+          delete next[context.itemId];
+          return next;
+        });
+      }
     },
 
-    onSuccess: (updatedCart) => {
-      // sync with server truth
-      queryClient.setQueryData(["cart"], updatedCart);
+    onSuccess: (_updatedCart, variables) => {
+      setOptimisticQty((prev) => {
+        const next = { ...prev };
+        delete next[variables.itemId];
+        return next;
+      });
     },
 
     onSettled: (_, __, context: any) => {
@@ -81,6 +92,7 @@ export function useCart() {
           return next;
         });
       }
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
 
@@ -124,6 +136,7 @@ export function useCart() {
           return next;
         });
       }
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
   });
 
@@ -158,10 +171,23 @@ export function useCart() {
     return Number.isFinite(cleaned) ? cleaned : 0;
   };
 
+  const getItemKeys = (item: any) =>
+    [
+      item?._id?.toString?.(),
+      item?.id?.toString?.(),
+      item?.productId?._id?.toString?.(),
+      item?.productId?.id?.toString?.(),
+    ].filter(Boolean) as string[];
+
   const total =
     cart?.items?.reduce((sum: number, item: any) => {
       const price = parseNumber(item.productId?.price ?? item.price ?? 0);
-      const qty = parseNumber(item.quantity ?? 0);
+      const keys = getItemKeys(item);
+      const optimistic = keys.find((k) => optimisticQty[k] != null);
+      const qty = optimistic != null
+        ? parseNumber(optimisticQty[optimistic])
+        : parseNumber(item.quantity ?? 0);
+
       return sum + price * qty;
     }, 0) || 0;
 
@@ -180,7 +206,7 @@ export function useCart() {
     setAddress,
 
     handleQuantityChange: (id: string, cur: number, delta: number) => {
-      const next = cur + delta;
+      const next = parseNumber(cur) + parseNumber(delta);
       if (next >= 1) {
         updateQuantityMutation.mutate({ itemId: id, quantity: next });
       }
@@ -201,5 +227,6 @@ export function useCart() {
 
     isPlacingOrder: placeOrderMutation.isPending,
     parseNumber,
+    refetch,
   };
 }
