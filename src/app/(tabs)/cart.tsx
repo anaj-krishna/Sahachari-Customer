@@ -35,6 +35,8 @@ export default function Cart() {
     isPlacingOrder,
     parseNumber,
     refetch,
+    orderResponse,
+    setOrderResponse,
   } = useCart();
 
   const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
@@ -135,8 +137,10 @@ export default function Cart() {
         visible={showSuccessModal}
         onClose={() => {
           setShowSuccessModal(false);
+          setOrderResponse(null);
           router.push("/home");
         }}
+        orderResponse={orderResponse}
       />
     </SafeAreaView>
   );

@@ -1,30 +1,30 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    CheckCircle,
-    ChevronLeft,
-    ChevronRight,
-    Heart,
-    Minus,
-    Package,
-    Plus,
-    Share2,
-    ShoppingCart,
-    XCircle,
+  ArrowLeft,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Minus,
+  Package,
+  Plus,
+  Share2,
+  ShoppingCart,
+  XCircle,
 } from "lucide-react-native";
 import { useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Animated,
-    Dimensions,
-    Image,
-    Pressable,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Image,
+  Pressable,
   RefreshControl,
-    ScrollView,
-    Share,
-    Text,
-    View,
+  ScrollView,
+  Share,
+  Text,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AddToCartModal } from "../../components/cart/AddToCartModal";
@@ -62,6 +62,8 @@ export default function ProductDetails() {
     setShowQuantityModal,
     handleAddToCart,
     handleBuyNow,
+    orderResponse,
+    setOrderResponse,
   } = useProductActions(product);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -590,8 +592,10 @@ export default function ProductDetails() {
         visible={showSuccessModal}
         onClose={() => {
           setShowSuccessModal(false);
+          setOrderResponse(null);
           router.push("/orders");
         }}
+        orderResponse={orderResponse}
       />
     </View>
   );

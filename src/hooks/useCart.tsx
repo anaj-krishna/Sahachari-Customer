@@ -10,9 +10,12 @@ import {
 export function useCart() {
   const queryClient = useQueryClient();
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
-  const [optimisticQty, setOptimisticQty] = useState<Record<string, number>>({});
+  const [optimisticQty, setOptimisticQty] = useState<Record<string, number>>(
+    {},
+  );
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [orderResponse, setOrderResponse] = useState<any>(null);
 
   const [address, setAddress] = useState({
     street: "",
@@ -22,7 +25,11 @@ export function useCart() {
     notes: "",
   });
 
-  const { data: cart, isLoading, refetch } = useQuery({
+  const {
+    data: cart,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["cart"],
     queryFn: getCart,
   });
@@ -30,13 +37,8 @@ export function useCart() {
   /* ================= UPDATE QUANTITY ================= */
 
   const updateQuantityMutation = useMutation({
-    mutationFn: ({
-      itemId,
-      quantity,
-    }: {
-      itemId: string;
-      quantity: number;
-    }) => updateCartItemQuantity(itemId, quantity),
+    mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
+      updateCartItemQuantity(itemId, quantity),
 
     onMutate: async ({ itemId, quantity }) => {
       await queryClient.cancelQueries({ queryKey: ["cart"] });
@@ -112,7 +114,7 @@ export function useCart() {
         return {
           ...old,
           items: old.items.filter(
-            (item: any) => item._id?.toString() !== itemId
+            (item: any) => item._id?.toString() !== itemId,
           ),
         };
       });
@@ -145,8 +147,11 @@ export function useCart() {
   const placeOrderMutation = useMutation({
     mutationFn: placeOrder,
 
-    onSuccess: () => {
+    onSuccess: (response) => {
+      // Store the response for display in success modal
+      setOrderResponse(response);
       queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
 
       setShowCheckoutModal(false);
       setTimeout(() => setShowSuccessModal(true), 250);
@@ -184,9 +189,10 @@ export function useCart() {
       const price = parseNumber(item.productId?.price ?? item.price ?? 0);
       const keys = getItemKeys(item);
       const optimistic = keys.find((k) => optimisticQty[k] != null);
-      const qty = optimistic != null
-        ? parseNumber(optimisticQty[optimistic])
-        : parseNumber(item.quantity ?? 0);
+      const qty =
+        optimistic != null
+          ? parseNumber(optimisticQty[optimistic])
+          : parseNumber(item.quantity ?? 0);
 
       return sum + price * qty;
     }, 0) || 0;
@@ -204,6 +210,8 @@ export function useCart() {
     setShowSuccessModal,
     address,
     setAddress,
+    orderResponse,
+    setOrderResponse,
 
     handleQuantityChange: (id: string, cur: number, delta: number) => {
       const next = parseNumber(cur) + parseNumber(delta);
@@ -217,7 +225,12 @@ export function useCart() {
     },
 
     handleCheckout: () => {
-      if (!address.street || !address.city || !address.zipCode || !address.phone) {
+      if (
+        !address.street ||
+        !address.city ||
+        !address.zipCode ||
+        !address.phone
+      ) {
         alert("Please fill in all required fields");
         return;
       }
