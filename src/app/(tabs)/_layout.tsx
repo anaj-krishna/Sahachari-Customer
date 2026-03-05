@@ -35,13 +35,16 @@ export default function TabsLayout() {
           headerLeft: () => null,
           tabBarShowLabel: false,
           tabBarStyle: {
-            height: 64 + Math.min(insets.bottom, 30),
-            paddingBottom: Math.min(insets.bottom, 30),
-            paddingTop: 6,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height:  + insets.bottom,
+            paddingBottom: insets.bottom,
+            paddingTop:7,
             borderTopWidth: 1,
             borderTopColor: "#e5e7eb",
             backgroundColor: "#fff",
-            elevation: 8,
+            elevation: 9,
           },
         }}
       >
