@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   ArrowLeft,
   CheckCircle,
@@ -13,9 +14,10 @@ import {
   ShoppingCart,
   XCircle,
 } from "lucide-react-native";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   Animated,
   Dimensions,
   Image,
@@ -42,7 +44,11 @@ export const unstable_settings = {
 const { width } = Dimensions.get("window");
 
 export default function ProductDetails() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from, storeId } = useLocalSearchParams<{
+    id: string;
+    from?: string;
+    storeId?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -127,6 +133,31 @@ export default function ProductDetails() {
     }
   };
 
+  const handleBackPress = useCallback(() => {
+    if (from === "store-items" && typeof storeId === "string") {
+      router.replace({
+        pathname: "/products",
+        params: { storeId },
+      } as any);
+      return;
+    }
+    router.back();
+  }, [from, storeId, router]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          handleBackPress();
+          return true;
+        },
+      );
+
+      return () => subscription.remove();
+    }, [handleBackPress]),
+  );
+
   const handleAddToCartClick = () => {
     // For services, automatically use quantity 1
     if (isService) {
@@ -209,7 +240,7 @@ export default function ProductDetails() {
         style={{ paddingTop: 12 }}
       >
         <Pressable
-          onPress={() => router.back()}
+          onPress={handleBackPress}
           className="bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg"
         >
           <ArrowLeft size={24} color="#1F2937" strokeWidth={2.5} />

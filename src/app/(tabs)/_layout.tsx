@@ -2,7 +2,7 @@ import { Redirect, Tabs } from "expo-router";
 import {
   Home as HomeIcon,
   Receipt as ReceiptIcon,
-  ShoppingBag as ProductsIcon,
+  Store as StoresIcon,
   ShoppingCart as CartIcon,
   Wrench as ServicesIcon,
 } from "lucide-react-native";
@@ -76,7 +76,7 @@ export default function TabsLayout() {
           options={{
             tabBarIcon: ({ focused }) => (
               <View className="items-center justify-center w-[64px] mt-2">
-                <ProductsIcon
+                <StoresIcon
                   size={24}
                   strokeWidth={focused ? 2.6 : 2}
                   color={focused ? "#2563eb" : "#6b7280"}
@@ -88,7 +88,7 @@ export default function TabsLayout() {
                     focused ? "text-blue-600 font-semibold" : "text-gray-500"
                   }`}
                 >
-                  Products
+                  Stores
                 </Text>
               </View>
             ),
