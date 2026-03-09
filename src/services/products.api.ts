@@ -4,6 +4,24 @@ import { api } from "./api";
 const S3_BASE =
   (process.env.EXPO_PUBLIC_S3_BASE_URL || "").replace(/\/$/, "");
 
+function normalizeId(value: any): string {
+  if (!value) return "";
+
+  if (typeof value === "string") return value;
+
+  if (typeof value === "object") {
+    if (typeof value.$oid === "string") return value.$oid;
+    if (typeof value._id === "string") return value._id;
+    if (typeof value.id === "string") return value.id;
+    if (value._id && typeof value._id === "object" && value._id.$oid) {
+      return String(value._id.$oid);
+    }
+  }
+
+  const asString = value?.toString?.();
+  return asString && asString !== "[object Object]" ? asString : "";
+}
+
 function normalizeImage(img: any): string | null {
   if (!img) return null;
 
@@ -28,6 +46,16 @@ function normalizeImage(img: any): string | null {
 }
 
 function mapProduct(raw: any): Product {
+  const rawStoreId = raw?.storeId?._id ?? raw?.storeId?.id ?? raw?.storeId;
+  const resolvedStoreName =
+    raw?.storeId?.name ??
+    raw?.store?.name ??
+    raw?.storekeeper?.name ??
+    raw?.storekeeperName ??
+    raw?.user?.name ??
+    raw?.nameOfStore ??
+    raw?.storeName;
+
   return {
     id: raw._id?.toString() ?? raw.id?.toString(),
     name: raw.name,
@@ -40,7 +68,8 @@ function mapProduct(raw: any): Product {
     quantity: Number(raw.quantity || 0),
     price: String(raw.price ?? 0),
     category: raw.category,
-    storeId: raw.storeId?.toString?.() ?? raw.storeId,
+    storeId: normalizeId(rawStoreId),
+    storeName: resolvedStoreName,
     offers: raw.offers || [],
     finalPrice:
       typeof raw.finalPrice === "number"
@@ -48,6 +77,39 @@ function mapProduct(raw: any): Product {
         : raw.finalPrice
         ? Number(raw.finalPrice)
         : undefined,
+  };
+}
+
+function mapStore(raw: any): Store {
+  if (typeof raw === "string") {
+    return { id: raw };
+  }
+
+  const resolvedStoreName =
+    raw?.name ??
+    raw?.storeName ??
+    raw?.storekeeperName ??
+    raw?.user?.name ??
+    raw?.storekeeper?.name;
+
+  const resolvedStoreImage =
+    normalizeImage(
+      raw?.image ??
+        raw?.profileImage ??
+        raw?.avatar ??
+        raw?.logo ??
+        raw?.storekeeper?.image ??
+        raw?.storekeeper?.profileImage ??
+        raw?.user?.image,
+    ) ?? undefined;
+
+  return {
+    id: normalizeId(raw?.id ?? raw?._id ?? raw?.storeId),
+    name: resolvedStoreName,
+    email: raw?.email,
+    status: raw?.status,
+    isVerified: raw?.isVerified,
+    image: resolvedStoreImage,
   };
 }
 
@@ -60,7 +122,7 @@ export const getProduct = (id: string): Promise<Product> =>
   api.get<any>(`/customer/products/${id}`).then(r => mapProduct(r.data));
 
 export const getStores = (): Promise<Store[]> =>
-  api.get<string[]>("/customer/stores").then(r => r.data.map(String));
+  api.get<any[]>("/customer/stores").then(r => r.data.map(mapStore));
 
 export const getStoreProducts = (storeId: string): Promise<Product[]> =>
   api

@@ -1,10 +1,15 @@
-import { useAuthStore } from "@/store/auth.store";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ShoppingBag, Store as StoreIcon } from "lucide-react-native";
-import React from "react";
+import {
+  ArrowLeft,
+  ShoppingBag,
+  Store as StoreIcon,
+} from "lucide-react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   FlatList,
   Image,
   Pressable,
@@ -13,21 +18,11 @@ import {
   RefreshControl,
   StyleSheet,
 } from "react-native";
-import { useCategoryStores } from "../../hooks/Usecategorystores";
-import { useProducts } from "../../hooks/useProducts";
+import { useProducts, useStores } from "../../hooks/useProducts";
 import { useStoreProducts } from "../../hooks/useStoreProducts";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSmartRefresh } from "../../hooks/useSmartRefresh";
-
-interface Store {
-  _id: string;
-  name: string;
-  email: string;
-  address: string;
-  status: string;
-  isVerified: boolean;
-  image: string;
-}
+import { Store } from "../../types/product";
 
 interface Product {
   _id?: string;
@@ -41,73 +36,83 @@ interface Product {
   quantity: number;
   offers: any[];
   storeId?: string;
+  storeName?: string;
 }
 
 export default function ProductsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const categoryFilter =
-    typeof params.category === "string" ? params.category : undefined;
   const storeId =
     typeof params.storeId === "string" ? params.storeId : undefined;
 
-  const searchQuery = "";
-  const { token } = useAuthStore();
-  const AUTH_TOKEN = token ?? undefined;
-  const S3_BASE_URL = process.env.EXPO_PUBLIC_S3_BASE_URL;
-  // Fetch category stores when category is provided but no storeId
   const {
     data: stores = [],
     isLoading: isLoadingStores,
     refetch: refetchStores,
-  } = useCategoryStores(
-    !storeId ? categoryFilter ?? undefined : undefined,
-    AUTH_TOKEN,
-  );
+  } = useStores();
 
-  // Fetch products by storeId if provided, otherwise fetch all products
+  const duplicateStoreNames = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    stores.forEach((store) => {
+      const key = (store.name || "").trim().toLowerCase();
+      if (!key) return;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+
+    return counts;
+  }, [stores]);
+
   const {
-    data: allProducts,
-    isLoading: isLoadingAllProducts,
+    data: allProducts = [],
     refetch: refetchAllProducts,
-  } = useProducts(
-    searchQuery ? { search: searchQuery } : undefined,
-  );
+  } = useProducts();
 
   const {
-    data: storeProducts,
+    data: storeProducts = [],
     isLoading: isLoadingStoreProducts,
     refetch: refetchStoreProducts,
   } = useStoreProducts(storeId);
 
-  // Determine which products to show
-  const displayProducts = storeId ? storeProducts : allProducts;
-  const isLoadingProducts = storeId
-    ? isLoadingStoreProducts
-    : isLoadingAllProducts;
-  const products = Array.isArray(displayProducts) ? displayProducts : [];
-
-  // Determine what to show based on params
-  const showingStores = Boolean(categoryFilter && !storeId);
-
-  const listData = showingStores ? stores : products;
+  const listData = storeId ? storeProducts : stores;
+  const isLoadingList = storeId ? isLoadingStoreProducts : isLoadingStores;
+  const screenTitle = storeId ? "Store Items" : "Stores";
 
   const listKeyExtractor = (item: any, index: number) => {
-    if (showingStores) {
-      return item?._id?.toString?.() ?? String(index);
+    if (storeId) {
+      return item?._id?.toString?.() ?? item?.id?.toString?.() ?? String(index);
     }
-    return item?._id?.toString?.() ?? item?.id?.toString?.() ?? String(index);
+    return item?.id?.toString?.() ?? String(index);
   };
 
   const renderListItem = ({ item }: { item: any }) => {
-    return showingStores ? renderStore({ item }) : renderProduct({ item });
+    return storeId ? renderProduct({ item }) : renderStore({ item });
   };
+
+  const handleStoreItemsBack = useCallback(() => {
+    router.replace("/products");
+  }, [router]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!storeId) return;
+
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          handleStoreItemsBack();
+          return true;
+        },
+      );
+
+      return () => subscription.remove();
+    }, [storeId, handleStoreItemsBack]),
+  );
 
   const handleStorePress = (selectedStoreId: string) => {
     router.push({
       pathname: "/products",
       params: {
-        category: categoryFilter,
         storeId: selectedStoreId,
       },
     } as any);
@@ -116,13 +121,49 @@ export default function ProductsScreen() {
   const handleProductPress = (product: any) => {
     // Use _id if available, fallback to id
     const productId = product._id || product.id;
-    router.push(`/product/${productId}` as any);
+    router.push({
+      pathname: `/product/${productId}`,
+      params: storeId
+        ? {
+            from: "store-items",
+            storeId,
+          }
+        : undefined,
+    } as any);
   };
 
   const renderStore = ({ item }: { item: Store }) => {
+    const resolvedStoreId = item.id;
+    const resolvedStoreName =
+      item.name ||
+      allProducts.find(
+        (product) =>
+          product.storeId === resolvedStoreId &&
+          typeof product.storeName === "string" &&
+          product.storeName.trim().length > 0,
+      )?.storeName;
+    const normalizedName = (resolvedStoreName || "").trim();
+    const isNameDuplicate =
+      !!normalizedName &&
+      (duplicateStoreNames.get(normalizedName.toLowerCase()) || 0) > 1;
+    const displayStoreTitle =
+      normalizedName && !isNameDuplicate
+        ? normalizedName
+        : resolvedStoreId
+        ? `Store ${resolvedStoreId.slice(-6).toUpperCase()}`
+        : "Store";
+
+    const storeProductsCount = allProducts.filter(
+      (product) => product.storeId === resolvedStoreId,
+    ).length;
+    const productFallbackImage = allProducts.find(
+      (product) => product.storeId === resolvedStoreId,
+    )?.images?.[0];
+    const storeImage = item.image || productFallbackImage;
+
     return (
       <Pressable
-        onPress={() => handleStorePress(item._id)}
+        onPress={() => handleStorePress(resolvedStoreId)}
         className="mb-4 mx-4 rounded-3xl overflow-hidden bg-white active:scale-[0.98]"
         style={{
           shadowColor: "#000",
@@ -135,10 +176,10 @@ export default function ProductsScreen() {
         <View className="flex-row">
           {/* Store Image */}
           <View className="w-32 h-32 relative">
-            {item.image ? (
+            {storeImage ? (
               <>
                 <Image
-                  source={{ uri: `${S3_BASE_URL}/${item.image}` }}
+                  source={{ uri: storeImage }}
                   className="w-full h-full"
                   resizeMode="cover"
                 />
@@ -154,68 +195,36 @@ export default function ProductsScreen() {
                 />
               </>
             ) : (
-              <View className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 items-center justify-center">
+              <View className="w-full h-full bg-gray-100 items-center justify-center">
                 <StoreIcon size={32} color="#D1D5DB" strokeWidth={1.5} />
               </View>
             )}
 
-            {/* Verified Badge */}
-            {item.isVerified && (
-              <View className="absolute top-2 left-2">
-                <LinearGradient
-                  colors={["#10B981", "#059669"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                  }}
-                >
-                  <Text className="text-white text-xs font-bold">
-                    ✓ Verified
-                  </Text>
-                </LinearGradient>
-              </View>
-            )}
-
-            {/* Status Badge */}
-            <View className="absolute bottom-2 right-2">
-              <View
-                className={`px-2 py-1 rounded-full ${
-                  item.status === "ACTIVE" ? "bg-green-500" : "bg-gray-500"
-                }`}
-              >
-                <Text className="text-white text-xs font-semibold">
-                  {item.status}
-                </Text>
-              </View>
+            <View className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded-full">
+              <Text className="text-white text-xs font-semibold">
+                {storeProductsCount} items
+              </Text>
             </View>
           </View>
 
           {/* Store Details */}
           <View className="flex-1 p-4 justify-between">
-            {/* Name and Address */}
             <View>
               <Text
                 className="text-lg font-bold text-gray-900"
                 numberOfLines={1}
               >
-                {item.name}
+                {displayStoreTitle}
               </Text>
               <Text className="text-sm text-gray-500 mt-1" numberOfLines={1}>
-                📍 {item.address}
-              </Text>
-              <Text className="text-sm text-gray-400 mt-1" numberOfLines={1}>
-                ✉️ {item.email}
+                Store ID: {resolvedStoreId || "N/A"}
               </Text>
             </View>
 
-            {/* View Products Button */}
             <View className="mt-3">
               <View className="bg-blue-50 self-start px-4 py-2 rounded-full">
                 <Text className="text-xs text-blue-700 font-semibold">
-                  View Products →
+                  View Items →
                 </Text>
               </View>
             </View>
@@ -281,7 +290,7 @@ export default function ProductsScreen() {
                 )}
               </>
             ) : (
-              <View className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 items-center justify-center">
+              <View className="w-full h-full bg-gray-100 items-center justify-center">
                 <ShoppingBag size={32} color="#D1D5DB" strokeWidth={1.5} />
               </View>
             )}
@@ -393,15 +402,11 @@ export default function ProductsScreen() {
   };
 
   const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
-    if (showingStores) {
-      await refetchStores();
-      return;
-    }
     if (storeId) {
       await refetchStoreProducts();
       return;
     }
-    await refetchAllProducts();
+    await Promise.all([refetchStores(), refetchAllProducts()]);
   });
 
   return (
@@ -415,17 +420,27 @@ export default function ProductsScreen() {
         onScroll={onScroll}
         scrollEventThrottle={16}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <Text className="text-3xl font-bold text-gray-800 mb-1">
-              {showingStores ? "Stores" : "All Products"}
-            </Text>
-            <Text className="text-gray-500 font-medium">
-              {listData.length} {showingStores ? "stores" : "items"}
-            </Text>
+          <View>
+            <View style={styles.header}>
+              {storeId && (
+                <Pressable
+                  onPress={handleStoreItemsBack}
+                  className="bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg mb-3 self-start"
+                >
+                  <ArrowLeft size={24} color="#1F2937" strokeWidth={2.5} />
+                </Pressable>
+              )}
+              <Text className="text-3xl font-bold text-gray-800 mb-1">
+                {screenTitle}
+              </Text>
+              <Text className="text-gray-500 font-medium">
+                {listData.length} {storeId ? "items" : "stores"}
+              </Text>
+            </View>
           </View>
         }
         ListEmptyComponent={
-          isLoadingStores || isLoadingProducts ? (
+          isLoadingList ? (
             <View className="py-10 items-center">
               <ActivityIndicator size="large" color="#2563eb" />
             </View>

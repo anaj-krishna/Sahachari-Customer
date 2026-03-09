@@ -20,8 +20,16 @@ export interface Product {
   price: string;
   category?: string;
   storeId: string;
+  storeName?: string;
   offers: Offer[];
   finalPrice?: number;
 }
 
-export type Store = string;
+export interface Store {
+  id: string;
+  name?: string;
+  email?: string;
+  status?: string;
+  isVerified?: boolean;
+  image?: string;
+}

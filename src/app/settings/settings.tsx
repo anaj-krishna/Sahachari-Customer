@@ -120,6 +120,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      queryClient.invalidateQueries({ queryKey: ["stores"] });
       setShowEditModal(false);
 
       if (Platform.OS === "android") {
@@ -218,6 +219,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      queryClient.invalidateQueries({ queryKey: ["stores"] });
 
       if (Platform.OS === "android") {
         ToastAndroid.show("Profile picture updated!", ToastAndroid.SHORT);
