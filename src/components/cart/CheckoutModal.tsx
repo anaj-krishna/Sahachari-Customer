@@ -73,7 +73,7 @@ export function CheckoutModal({
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-white rounded-t-3xl max-h-[90%] overflow-hidden">
+        <View className="flex-1 bg-white rounded-t-3xl max-h-[90%]">
           <View className="items-center py-3 bg-white">
             <View className="w-12 h-1.5 rounded-full bg-gray-200" />
           </View>
@@ -97,18 +97,21 @@ export function CheckoutModal({
           </View>
 
           {isLoading ? (
-            <View className="py-8 items-center">
+            <View className="flex-1 py-8 items-center justify-center">
               <ActivityIndicator size="large" color="#2563eb" />
               <Text className="text-gray-500 mt-2">
                 Loading your details...
               </Text>
             </View>
           ) : (
-            <ScrollView className="px-6 py-5">
+            <ScrollView
+              className="flex-1 px-6 py-5"
+              showsVerticalScrollIndicator={true}
+            >
               <View className="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-5">
-                <View className="flex-row justify-between items-center">
+                <View className="flex-row justify-between items-center mb-2">
                   <Text className="text-blue-800 font-semibold">
-                    Order Summary
+                    Items Subtotal
                   </Text>
                   <Text className="text-blue-900 text-xl font-bold">
                     ₹{total.toFixed(2)}
@@ -117,6 +120,20 @@ export function CheckoutModal({
                 <Text className="text-blue-700 mt-1">
                   {itemSCount} {itemSCount === 1 ? "item" : "items"}
                 </Text>
+
+                <View className="mt-3 pt-3 border-t border-blue-200">
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-blue-700 font-medium text-sm">
+                      Delivery Charge
+                    </Text>
+                    <Text className="text-orange-600 font-semibold text-sm">
+                      Will be calculated
+                    </Text>
+                  </View>
+                  <Text className="text-blue-600 text-xs mt-1">
+                    Based on your delivery location
+                  </Text>
+                </View>
               </View>
 
               <View className="bg-white border border-gray-200 rounded-2xl p-4 mb-5">

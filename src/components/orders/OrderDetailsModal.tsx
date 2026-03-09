@@ -1,22 +1,22 @@
 // components/orders/OrderDetailsModal.tsx
 import { LinearGradient } from "expo-linear-gradient";
 import {
-  ChevronLeft,
-  CreditCard,
-  MapPin,
-  Package,
-  Phone,
-  StickyNote,
-  X,
+    ChevronLeft,
+    CreditCard,
+    MapPin,
+    Package,
+    Phone,
+    StickyNote,
+    X,
 } from "lucide-react-native";
 import {
-  ActivityIndicator,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
+    ActivityIndicator,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    Text,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getStatusColor } from "./OrderCard";
@@ -167,7 +167,10 @@ export function OrderDetailsModal({
                         source={{ uri: item.productId?.images?.[0] }}
                         className="w-6 h-6 rounded-md bg-gray-100 mr-2"
                       />
-                      <Text className="font-bold text-gray-800 text-base flex-1" numberOfLines={1}>
+                      <Text
+                        className="font-bold text-gray-800 text-base flex-1"
+                        numberOfLines={1}
+                      >
                         {item.productId?.name}
                       </Text>
                       <View className="bg-blue-600 rounded-full w-6 h-6 items-center justify-center ml-2">
@@ -256,11 +259,35 @@ export function OrderDetailsModal({
                       Total Amount
                     </Text>
                   </View>
-                  <Text className="text-white text-4xl font-bold">
-                    ₹{order.totalAmount?.toFixed(2)}
-                  </Text>
-                  <Text className="text-white/70 text-sm mt-2">
-                    Including all taxes and fees
+
+                  {/* Breakdown Section */}
+                  <View className="bg-white/10 rounded-2xl p-4 mb-4">
+                    <View className="flex-row justify-between items-center mb-3">
+                      <Text className="text-white/80 text-sm">
+                        Items Subtotal
+                      </Text>
+                      <Text className="text-white font-semibold">
+                        ₹{order.itemsSubtotal?.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between items-center pb-3 border-b border-white/20">
+                      <Text className="text-white/80 text-sm">
+                        Delivery Charge
+                      </Text>
+                      <Text className="text-orange-300 font-semibold">
+                        ₹{order.deliveryCharge?.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between items-center pt-3">
+                      <Text className="text-white font-semibold">Total</Text>
+                      <Text className="text-white text-2xl font-bold">
+                        ₹{order.totalAmount?.toFixed(2)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text className="text-white/70 text-xs text-center">
+                    Including all taxes and delivery charges
                   </Text>
                 </View>
               </LinearGradient>

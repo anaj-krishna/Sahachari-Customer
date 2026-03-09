@@ -10,6 +10,7 @@ export function useProductActions(product: any) {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showQuantityModal, setShowQuantityModal] = useState(false);
+  const [orderResponse, setOrderResponse] = useState<any>(null);
   const [address, setAddress] = useState({
     street: "",
     city: "",
@@ -51,11 +52,12 @@ export function useProductActions(product: any) {
 
     setLoading(true);
     try {
-      await placeSingleOrder({
+      const response = await placeSingleOrder({
         productId: product.id,
         quantity,
         deliveryAddress: address,
       });
+      setOrderResponse(response);
       await queryClient.invalidateQueries({ queryKey: ["orders"] });
       setShowAddressModal(false);
       setShowSuccessModal(true);
@@ -80,5 +82,7 @@ export function useProductActions(product: any) {
     setShowQuantityModal,
     handleAddToCart,
     handleBuyNow,
+    orderResponse,
+    setOrderResponse,
   };
 }
