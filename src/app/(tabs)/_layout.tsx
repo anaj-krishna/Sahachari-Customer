@@ -2,7 +2,6 @@ import { Redirect, Tabs } from "expo-router";
 import {
   Home as HomeIcon,
   Receipt as ReceiptIcon,
-  ShoppingBag as ProductsIcon,
   ShoppingCart as CartIcon,
   Wrench as ServicesIcon,
 } from "lucide-react-native";
@@ -72,11 +71,11 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="products"
+          name="services"
           options={{
             tabBarIcon: ({ focused }) => (
               <View className="items-center justify-center w-[64px] mt-2">
-                <ProductsIcon
+                <ServicesIcon
                   size={24}
                   strokeWidth={focused ? 2.6 : 2}
                   color={focused ? "#2563eb" : "#6b7280"}
@@ -88,7 +87,7 @@ export default function TabsLayout() {
                     focused ? "text-blue-600 font-semibold" : "text-gray-500"
                   }`}
                 >
-                  Products
+                  Services
                 </Text>
               </View>
             ),
@@ -140,29 +139,8 @@ export default function TabsLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="services"
-          options={{
-            tabBarIcon: ({ focused }) => (
-              <View className="items-center justify-center w-[64px] mt-2">
-                <ServicesIcon
-                  size={24}
-                  strokeWidth={focused ? 2.6 : 2}
-                  color={focused ? "#2563eb" : "#6b7280"}
-                />
-                <Text
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  className={`text-[11px] mt-1 ${
-                    focused ? "text-blue-600 font-semibold" : "text-gray-500"
-                  }`}
-                >
-                  Services
-                </Text>
-              </View>
-            ),
-          }}
-        />
+        {/* Keep products route accessible but hide it from the tab bar */}
+        <Tabs.Screen name="products" options={{ href: null }} />
       </Tabs>
     </View>
   );
