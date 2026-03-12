@@ -492,7 +492,7 @@ export default function ProductDetails() {
       </ScrollView>
 
       {/* Floating Action Buttons */}
-      {/* Show for services (always available) or products with stock */}
+      {/* Services: only Book Now. Products: Add to Cart + Buy Now. */}
       {(isService || (product.quantity && product.quantity > 0)) && (
         <View
           className="absolute bottom-0 left-0 right-0 px-6 bg-white border-t border-gray-100"
@@ -507,24 +507,26 @@ export default function ProductDetails() {
           }}
         >
           <View className="flex-row gap-3">
-            <Pressable
-              disabled={loading}
-              onPress={handleAddToCartClick}
-              className={`flex-1 rounded-2xl overflow-hidden ${loading ? "opacity-50" : ""
-                }`}
-            >
-              <View className="bg-gray-100 py-4 flex-row items-center justify-center">
-                <ShoppingCart size={20} color="#1F2937" strokeWidth={2.5} />
-                <Text className="text-gray-900 font-bold text-base ml-2">
-                  Add to Cart
-                </Text>
-              </View>
-            </Pressable>
+            {!isService && (
+              <Pressable
+                disabled={loading}
+                onPress={handleAddToCartClick}
+                className={`flex-1 rounded-2xl overflow-hidden ${loading ? "opacity-50" : ""
+                  }`}
+              >
+                <View className="bg-gray-100 py-4 flex-row items-center justify-center">
+                  <ShoppingCart size={20} color="#1F2937" strokeWidth={2.5} />
+                  <Text className="text-gray-900 font-bold text-base ml-2">
+                    Add to Cart
+                  </Text>
+                </View>
+              </Pressable>
+            )}
 
             <Pressable
               disabled={loading}
               onPress={handleBuyNowClick}
-              className={`flex-1 rounded-2xl overflow-hidden ${loading ? "opacity-50" : ""
+              className={`${isService ? "w-full" : "flex-1"} rounded-2xl overflow-hidden ${loading ? "opacity-50" : ""
                 }`}
             >
               <LinearGradient
