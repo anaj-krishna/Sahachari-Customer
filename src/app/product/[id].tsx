@@ -1,6 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
 import {
   ArrowLeft,
   CheckCircle,
@@ -14,10 +13,9 @@ import {
   ShoppingCart,
   XCircle,
 } from "lucide-react-native";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  BackHandler,
   Animated,
   Dimensions,
   Image,
@@ -44,11 +42,7 @@ export const unstable_settings = {
 const { width } = Dimensions.get("window");
 
 export default function ProductDetails() {
-  const { id, from, storeId } = useLocalSearchParams<{
-    id: string;
-    from?: string;
-    storeId?: string;
-  }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -133,30 +127,6 @@ export default function ProductDetails() {
     }
   };
 
-  const handleBackPress = useCallback(() => {
-    if (from === "store-items" && typeof storeId === "string") {
-      router.replace({
-        pathname: "/products",
-        params: { storeId },
-      } as any);
-      return;
-    }
-    router.back();
-  }, [from, storeId, router]);
-
-  useFocusEffect(
-    useCallback(() => {
-      const subscription = BackHandler.addEventListener(
-        "hardwareBackPress",
-        () => {
-          handleBackPress();
-          return true;
-        },
-      );
-
-      return () => subscription.remove();
-    }, [handleBackPress]),
-  );
 
   const handleAddToCartClick = () => {
     // For services, automatically use quantity 1
@@ -240,7 +210,7 @@ export default function ProductDetails() {
         style={{ paddingTop: 12 }}
       >
         <Pressable
-          onPress={handleBackPress}
+          onPress={() => router.back()}
           className="bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg"
         >
           <ArrowLeft size={24} color="#1F2937" strokeWidth={2.5} />
@@ -360,11 +330,10 @@ export default function ProductDetails() {
                 <Pressable
                   key={index}
                   onPress={() => scrollToImage(index)}
-                  className={`h-2 rounded-full ${
-                    activeImageIndex === index
+                  className={`h-2 rounded-full ${activeImageIndex === index
                       ? "bg-white w-8"
                       : "bg-white/50 w-2"
-                  }`}
+                    }`}
                 />
               ))}
             </View>
@@ -479,9 +448,8 @@ export default function ProductDetails() {
                 <Pressable
                   onPress={decrementQuantity}
                   disabled={quantity <= 1}
-                  className={`bg-gray-100 rounded-full p-3 ${
-                    quantity <= 1 ? "opacity-50" : ""
-                  }`}
+                  className={`bg-gray-100 rounded-full p-3 ${quantity <= 1 ? "opacity-50" : ""
+                    }`}
                 >
                   <Minus size={20} color="#1F2937" strokeWidth={2.5} />
                 </Pressable>
@@ -493,9 +461,8 @@ export default function ProductDetails() {
                 <Pressable
                   onPress={incrementQuantity}
                   disabled={quantity >= product.quantity}
-                  className={`bg-gray-100 rounded-full p-3 ${
-                    quantity >= product.quantity ? "opacity-50" : ""
-                  }`}
+                  className={`bg-gray-100 rounded-full p-3 ${quantity >= product.quantity ? "opacity-50" : ""
+                    }`}
                 >
                   <Plus size={20} color="#1F2937" strokeWidth={2.5} />
                 </Pressable>
@@ -525,7 +492,7 @@ export default function ProductDetails() {
       </ScrollView>
 
       {/* Floating Action Buttons */}
-      {/* Show for services (always available) or products with stock */}
+      {/* Services: only Book Now. Products: Add to Cart + Buy Now. */}
       {(isService || (product.quantity && product.quantity > 0)) && (
         <View
           className="absolute bottom-0 left-0 right-0 px-6 bg-white border-t border-gray-100"
@@ -540,27 +507,27 @@ export default function ProductDetails() {
           }}
         >
           <View className="flex-row gap-3">
-            <Pressable
-              disabled={loading}
-              onPress={handleAddToCartClick}
-              className={`flex-1 rounded-2xl overflow-hidden ${
-                loading ? "opacity-50" : ""
-              }`}
-            >
-              <View className="bg-gray-100 py-4 flex-row items-center justify-center">
-                <ShoppingCart size={20} color="#1F2937" strokeWidth={2.5} />
-                <Text className="text-gray-900 font-bold text-base ml-2">
-                  Add to Cart
-                </Text>
-              </View>
-            </Pressable>
+            {!isService && (
+              <Pressable
+                disabled={loading}
+                onPress={handleAddToCartClick}
+                className={`flex-1 rounded-2xl overflow-hidden ${loading ? "opacity-50" : ""
+                  }`}
+              >
+                <View className="bg-gray-100 py-4 flex-row items-center justify-center">
+                  <ShoppingCart size={20} color="#1F2937" strokeWidth={2.5} />
+                  <Text className="text-gray-900 font-bold text-base ml-2">
+                    Add to Cart
+                  </Text>
+                </View>
+              </Pressable>
+            )}
 
             <Pressable
               disabled={loading}
               onPress={handleBuyNowClick}
-              className={`flex-1 rounded-2xl overflow-hidden ${
-                loading ? "opacity-50" : ""
-              }`}
+              className={`${isService ? "w-full" : "flex-1"} rounded-2xl overflow-hidden ${loading ? "opacity-50" : ""
+                }`}
             >
               <LinearGradient
                 colors={["#EA580C", "#DC2626"]}

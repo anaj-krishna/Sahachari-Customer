@@ -177,6 +177,11 @@ export default function Home() {
   };
 
   const handleCategoryPress = (categoryName: string) => {
+    if (categoryName === "Service") {
+      router.push("/services");
+      return;
+    }
+
     router.push({
       pathname: "/products",
       params: { category: categoryName },
