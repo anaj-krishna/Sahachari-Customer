@@ -1,8 +1,8 @@
 import { Redirect, Tabs } from "expo-router";
 import {
+  ShoppingCart as CartIcon,
   Home as HomeIcon,
   Receipt as ReceiptIcon,
-  ShoppingCart as CartIcon,
   Wrench as ServicesIcon,
 } from "lucide-react-native";
 import { ActivityIndicator, Text, View } from "react-native";
@@ -13,6 +13,9 @@ import { Role } from "../../types/user";
 export default function TabsLayout() {
   const { token, user, hydrated } = useAuthStore();
   const insets = useSafeAreaInsets();
+  const tabBarBottomInset = Math.max(insets.bottom, 0);
+  const tabBarBaseHeight = 64;
+  const tabBarVerticalPadding = 8;
 
   if (!hydrated) {
     return (
@@ -37,9 +40,10 @@ export default function TabsLayout() {
             bottom: 0,
             left: 0,
             right: 0,
-            height: 64 + insets.bottom,
-            paddingBottom: insets.bottom || 12,
-            paddingTop: 8,
+            height: tabBarBaseHeight + tabBarBottomInset,
+            paddingBottom:
+              tabBarBottomInset > 0 ? tabBarBottomInset : tabBarVerticalPadding,
+            paddingTop: tabBarVerticalPadding,
             borderTopWidth: 1,
             borderTopColor: "#e5e7eb",
             backgroundColor: "#fff",
