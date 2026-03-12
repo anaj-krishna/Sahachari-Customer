@@ -1,46 +1,79 @@
-// components/orders/OrderDetailsModal.tsx
-import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
 import {
-    ChevronLeft,
-    CreditCard,
-    MapPin,
-    Package,
-    Phone,
-    StickyNote,
-    X,
-} from "lucide-react-native";
-import {
-    ActivityIndicator,
-    Image,
-    Modal,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getStatusColor } from "./OrderCard";
+import {
+  Check,
+  ChevronLeft,
+  CircleHelp,
+  CircleX,
+  Copy,
+  Package,
+  X,
+} from "lucide-react-native";
+import { useAuthStore } from "@/store/auth.store";
 
-const getStatusEmoji = (status: string) => {
-  const emojis: Record<string, string> = {
-    PLACED: "📦",
-    CONFIRMED: "✅",
-    SHIPPED: "🚚",
-    DELIVERED: "🎉",
-    CANCELLED: "❌",
+const S3_BASE = (process.env.EXPO_PUBLIC_S3_BASE_URL || "").replace(/\/$/, "");
+const API_BASE = (process.env.EXPO_PUBLIC_API_URL || "").replace(/\/$/, "");
+
+const resolveImageUri = (image: any): string | undefined => {
+  const base = S3_BASE || API_BASE;
+
+  const toAbsolute = (value: any): string | undefined => {
+    if (typeof value !== "string" || !value.trim()) return undefined;
+    if (/^https?:\/\//i.test(value)) return value;
+    if (!base) return undefined;
+    return `${base}/${value.replace(/^\/+/, "")}`;
   };
-  return emojis[status] || "📋";
+
+  if (!image) return undefined;
+  if (typeof image === "string") return toAbsolute(image);
+  return toAbsolute(image.url || image.key || image.path);
 };
 
-const getStatusTextColor = (status: string) => {
-  const colors: Record<string, string> = {
-    PLACED: "text-yellow-800",
-    CONFIRMED: "text-blue-800",
-    SHIPPED: "text-purple-800",
-    DELIVERED: "text-green-800",
-    CANCELLED: "text-red-800",
-  };
-  return colors[status] || "text-gray-800";
+const money = (value: any) => {
+  const amount = Number(value || 0);
+  return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
+};
+
+const formatDateTime = (dateString?: string) => {
+  if (!dateString) return "--";
+  const date = new Date(dateString);
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const ORDER_TIMELINE = ["PLACED", "CONFIRMED", "SHIPPED", "DELIVERED"];
+
+const getTimelineIndex = (status?: string) => {
+  if (!status) return 0;
+  if (status === "CANCELLED") return 1;
+  if (status === "FAILED") return 1;
+  const idx = ORDER_TIMELINE.indexOf(status);
+  return idx === -1 ? 0 : idx;
+};
+
+const formatStep = (step: string) => {
+  if (step === "PLACED") return "Placed";
+  if (step === "CONFIRMED") return "Confirmed";
+  if (step === "SHIPPED") return "In Transit";
+  if (step === "DELIVERED") return "Delivered";
+  return step;
 };
 
 export function OrderDetailsModal({
@@ -50,274 +83,580 @@ export function OrderDetailsModal({
   onClose,
   onCancel,
   isCancelling,
+  isOrderingAgain,
+  onOrderAgain,
 }: any) {
+  const currentUserName = useAuthStore((s) => s.user?.name);
+  const items = order?.items || [];
+  const status = String(order?.status || "").toUpperCase();
+  const canCancel = status === "PLACED";
+  const isDelivered = status === "DELIVERED";
+  const isFailed = status === "FAILED";
+  const isCancelled = status === "CANCELLED";
+  const timelineIndex = getTimelineIndex(status);
+
+  const receiverName =
+    order?.deliveryAddress?.name ||
+    order?.userId?.name ||
+    order?.user?.name ||
+    currentUserName ||
+    "Customer";
+
+  const receiverPhone = order?.deliveryAddress?.phone || "--";
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-gray-50">
-        <LinearGradient
-          colors={["#1E3A8A", "#2563EB", "#3B82F6"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ paddingBottom: 18 }}
-        >
-          <View className="px-4 pt-4">
-            <View className="flex-row items-center justify-between">
-              <Pressable
-                onPress={onClose}
-                className="bg-white/20 p-2 rounded-full active:bg-white/30"
-              >
-                <ChevronLeft size={22} color="#FFFFFF" />
-              </Pressable>
-
-              <View className="flex-row items-center">
-                <View className="bg-white/20 p-2 rounded-full mr-2">
-                  <Package size={18} color="#FFFFFF" />
-                </View>
-                <Text className="text-lg font-bold text-white">
-                  Order Details
-                </Text>
-              </View>
-
-              <Pressable
-                onPress={onClose}
-                className="bg-white/20 p-2 rounded-full active:bg-white/30"
-              >
-                <X size={22} color="#FFFFFF" />
-              </Pressable>
-            </View>
-
-            {order?.checkoutId && (
-              <View className="mt-4 bg-white/15 rounded-2xl p-4 border border-white/15">
-                <Text className="text-blue-100 text-xs font-semibold uppercase tracking-wider">
-                  Order ID
-                </Text>
-                <Text className="text-white text-xl font-bold mt-1">
-                  #{order.checkoutId}
-                </Text>
-              </View>
-            )}
-          </View>
-        </LinearGradient>
-
+      <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
         {!order || isLoading ? (
-          <View className="flex-1 items-center justify-center">
-            <View className="bg-white p-8 rounded-3xl shadow-lg items-center">
-              <ActivityIndicator size="large" color="#2563eb" />
-              <Text className="text-gray-500 mt-4 font-medium">
-                Loading details...
-              </Text>
-            </View>
+          <View style={styles.loaderWrap}>
+            <ActivityIndicator size="large" color="#2563EB" />
+            <Text style={styles.loaderText}>Loading details...</Text>
           </View>
         ) : (
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-            <View className="mx-4 mt-4 bg-white rounded-3xl shadow-md overflow-hidden">
-              <LinearGradient
-                colors={["#EFF6FF", "#EEF2FF", "#F5F3FF"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+          <>
+            <View style={styles.topHeader}>
+              <Pressable style={styles.iconBtn} onPress={onClose}>
+                <ChevronLeft size={22} color="#1D2A24" strokeWidth={2.5} />
+              </Pressable>
+
+              <View style={styles.headerTextWrap}>
+                <Text style={styles.orderIdText} numberOfLines={1}>
+                  Order #{order.checkoutId || "--"}
+                </Text>
+                <Text style={styles.itemCountText}>
+                  {items.length} {items.length === 1 ? "item" : "items"}
+                </Text>
+              </View>
+
+              <Pressable
+                style={styles.helpBtn}
+                onPress={() => Alert.alert("Help", "Support flow coming soon")}
               >
-                <View className="p-6">
-                  <View className="flex-row justify-between items-center mb-4">
-                    <View>
-                      <Text className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1">
-                        Status
-                      </Text>
-                      <Text className="font-bold text-xl text-gray-800">
-                        {order.status}
-                      </Text>
-                    </View>
-                    <View className="bg-white rounded-full p-3 shadow-sm">
-                      <Text className="text-3xl">
-                        {getStatusEmoji(order.status)}
-                      </Text>
-                    </View>
-                  </View>
+                <CircleHelp size={16} color="#2563EB" strokeWidth={2.2} />
+                <Text style={styles.helpBtnText}>Get Help</Text>
+              </Pressable>
+            </View>
+
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.sectionCard}>
+                <View style={styles.statusRow}>
                   <View
-                    className={`px-5 py-3 rounded-full self-start ${getStatusColor(order.status)} shadow-sm`}
+                    style={[
+                      styles.statusIconBox,
+                      isDelivered
+                        ? styles.statusIconBoxDelivered
+                        : isFailed || isCancelled
+                        ? styles.statusIconBoxFailed
+                        : styles.statusIconBoxDefault,
+                    ]}
                   >
+                    {isFailed || isCancelled ? (
+                      <CircleX size={30} color="#DC2626" strokeWidth={2.8} />
+                    ) : (
+                      <Check size={30} color={isDelivered ? "#16A34A" : "#2563EB"} strokeWidth={2.8} />
+                    )}
+                  </View>
+
+                  <View style={styles.statusTextWrap}>
                     <Text
-                      className={`font-bold text-sm uppercase tracking-wide ${getStatusTextColor(order.status)}`}
+                      style={[
+                        styles.statusTitle,
+                        isDelivered
+                          ? styles.statusTitleDelivered
+                          : isFailed || isCancelled
+                          ? styles.statusTitleFailed
+                          : null,
+                      ]}
                     >
-                      {order.status}
+                      {isDelivered ? "Delivered" : status}
                     </Text>
+                    <Text style={styles.statusSubText}>{formatDateTime(order.createdAt)}</Text>
                   </View>
                 </View>
-              </LinearGradient>
-            </View>
 
-            {/* Items Section */}
-            <View className="mx-4 mt-4 bg-white rounded-3xl shadow-md p-6">
-              <View className="flex-row items-center mb-4">
-                <View className="bg-emerald-100 p-2 rounded-lg mr-3">
-                  <Package size={20} color="#10B981" />
-                </View>
-                <Text className="font-bold text-xl text-gray-800">
-                  Order Items
-                </Text>
-              </View>
-
-              {order.items?.map((item: any, idx: number) => (
-                <View
-                  key={idx}
-                  className="flex-row mb-4 pb-4 border-b border-gray-100 last:border-b-0 last:mb-0 last:pb-0"
-                >
-                  <View className="flex-1 justify-center">
-                    <View className="flex-row items-center mb-1">
-                      <Image
-                        source={{ uri: item.productId?.images?.[0] }}
-                        className="w-6 h-6 rounded-md bg-gray-100 mr-2"
-                      />
-                      <Text
-                        className="font-bold text-gray-800 text-base flex-1"
-                        numberOfLines={1}
-                      >
-                        {item.productId?.name}
-                      </Text>
-                      <View className="bg-blue-600 rounded-full w-6 h-6 items-center justify-center ml-2">
-                        <Text className="text-white text-xs font-bold">
-                          {item.quantity}
+                <View style={styles.timelineWrap}>
+                  {ORDER_TIMELINE.map((step, idx) => {
+                    const isActive = idx <= timelineIndex;
+                    return (
+                      <View key={step} style={styles.timelineStep}>
+                        <View
+                          style={[
+                            styles.timelineDot,
+                            isActive ? styles.timelineDotActive : styles.timelineDotIdle,
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.timelineText,
+                            isActive ? styles.timelineTextActive : styles.timelineTextIdle,
+                          ]}
+                        >
+                          {formatStep(step)}
                         </Text>
+                        {idx < ORDER_TIMELINE.length - 1 && (
+                          <View
+                            style={[
+                              styles.timelineLine,
+                              idx < timelineIndex
+                                ? styles.timelineLineActive
+                                : styles.timelineLineIdle,
+                            ]}
+                          />
+                        )}
                       </View>
-                    </View>
-                    <Text className="text-gray-500 text-sm mb-2">
-                      {item.quantity} × ₹{item.price?.toFixed(2)}
-                    </Text>
-                    <View className="bg-blue-50 px-3 py-1 rounded-full self-start">
-                      <Text className="font-bold text-blue-700">
-                        ₹{(item.quantity * item.price)?.toFixed(2)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
-
-            {/* Delivery Address Section */}
-            <View className="mx-4 mt-4 bg-white rounded-3xl shadow-md p-6">
-              <View className="flex-row items-center mb-4">
-                <View className="bg-rose-100 p-2 rounded-lg mr-3">
-                  <MapPin size={20} color="#EF4444" />
-                </View>
-                <Text className="font-bold text-xl text-gray-800">
-                  Delivery Address
-                </Text>
-              </View>
-
-              <View className="bg-gray-50 rounded-2xl p-4">
-                <Text className="text-gray-800 leading-6 text-base mb-3">
-                  {order.deliveryAddress?.street}
-                </Text>
-                <Text className="text-gray-700 font-medium mb-3">
-                  {order.deliveryAddress?.city},{" "}
-                  {order.deliveryAddress?.zipCode}
-                </Text>
-
-                <View className="flex-row items-center pt-3 border-t border-gray-200">
-                  <View className="bg-blue-100 p-2 rounded-lg mr-3">
-                    <Phone size={16} color="#3B82F6" />
-                  </View>
-                  <Text className="text-gray-700 font-semibold">
-                    {order.deliveryAddress?.phone}
-                  </Text>
+                    );
+                  })}
                 </View>
 
-                {order.deliveryAddress?.notes && (
-                  <View className="mt-3 pt-3 border-t border-gray-200">
-                    <View className="flex-row items-start">
-                      <StickyNote
-                        size={16}
-                        color="#F59E0B"
-                        className="mr-2 mt-0.5"
-                      />
-                      <View className="flex-1">
-                        <Text className="text-gray-500 text-xs font-semibold mb-1 uppercase tracking-wide">
-                          Delivery Notes
-                        </Text>
-                        <Text className="text-gray-700 italic">
-                          {order.deliveryAddress.notes}
-                        </Text>
+                <Text style={styles.sectionTitle}>
+                  Basket Snapshot • {items.length} {items.length === 1 ? "item" : "items"}
+                </Text>
+
+                {items.map((item: any, idx: number) => {
+                  const imageUri =
+                    resolveImageUri(item?.productId?.images?.[0]) ||
+                    resolveImageUri(item?.productId?.image) ||
+                    resolveImageUri(item?.image);
+
+                  const qty = Number(item?.quantity || 0);
+                  const price = Number(item?.price || 0);
+
+                  return (
+                    <View key={idx} style={styles.itemRow}>
+                      <View style={styles.itemThumbBox}>
+                        {imageUri ? (
+                          <Image source={{ uri: imageUri }} style={styles.itemThumb} />
+                        ) : (
+                          <View style={styles.itemThumbFallback}>
+                            <Package size={16} color="#7C8E84" strokeWidth={2.2} />
+                          </View>
+                        )}
                       </View>
+
+                      <View style={styles.itemInfoCol}>
+                        <Text style={styles.itemName} numberOfLines={2}>
+                          {item?.productId?.name || "Item"}
+                        </Text>
+                        <Text style={styles.itemMeta}>₹{money(price)} x {qty}</Text>
+                      </View>
+
+                      <Text style={styles.itemPrice}>₹{money(price * qty)}</Text>
                     </View>
-                  </View>
-                )}
+                  );
+                })}
               </View>
-            </View>
 
-            {/* Total Amount Section */}
-            <View className="mx-4 mt-4 mb-4 rounded-3xl shadow-lg overflow-hidden">
-              <LinearGradient
-                colors={["#2563EB", "#1D4ED8", "#312E81"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View className="p-6">
-                  <View className="flex-row items-center mb-3">
-                    <View className="bg-white/20 p-2 rounded-lg mr-3">
-                      <CreditCard size={20} color="white" />
-                    </View>
-                    <Text className="text-white text-lg font-semibold">
-                      Total Amount
-                    </Text>
-                  </View>
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Spend Breakdown</Text>
 
-                  {/* Breakdown Section */}
-                  <View className="bg-white/10 rounded-2xl p-4 mb-4">
-                    <View className="flex-row justify-between items-center mb-3">
-                      <Text className="text-white/80 text-sm">
-                        Items Subtotal
-                      </Text>
-                      <Text className="text-white font-semibold">
-                        ₹{order.itemsSubtotal?.toFixed(2)}
-                      </Text>
-                    </View>
-                    <View className="flex-row justify-between items-center pb-3 border-b border-white/20">
-                      <Text className="text-white/80 text-sm">
-                        Delivery Charge
-                      </Text>
-                      <Text className="text-orange-300 font-semibold">
-                        ₹{order.deliveryCharge?.toFixed(2)}
-                      </Text>
-                    </View>
-                    <View className="flex-row justify-between items-center pt-3">
-                      <Text className="text-white font-semibold">Total</Text>
-                      <Text className="text-white text-2xl font-bold">
-                        ₹{order.totalAmount?.toFixed(2)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Text className="text-white/70 text-xs text-center">
-                    Including all taxes and delivery charges
-                  </Text>
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Item Total</Text>
+                  <Text style={styles.billValue}>₹{money(order.itemsSubtotal)}</Text>
                 </View>
-              </LinearGradient>
-            </View>
 
-            {/* Cancel Order Button */}
-            {order.status === "PLACED" && (
-              <View className="px-4 pb-6">
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Delivery Fee</Text>
+                  <Text style={styles.billValue}>₹{money(order.deliveryCharge)}</Text>
+                </View>
+
+                <View style={styles.billDivider} />
+
+                <View style={styles.billRow}>
+                  <Text style={styles.billTotalLabel}>Total Bill</Text>
+                  <Text style={styles.billTotalValue}>₹{money(order.totalAmount)}</Text>
+                </View>
+              </View>
+
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Delivery Profile</Text>
+
+                <Text style={styles.detailLabel}>Order ID</Text>
+                <View style={styles.detailValueRow}>
+                  <Text style={styles.detailValue}>#{order.checkoutId || "--"}</Text>
+                  <Copy size={16} color="#8A9B92" strokeWidth={2.3} />
+                </View>
+
+                <Text style={styles.detailLabel}>Receiver Details</Text>
+                <Text style={styles.detailValue}>{`${receiverName}, ${receiverPhone}`}</Text>
+
+                <Text style={[styles.detailLabel, styles.detailGap]}>Delivery Address</Text>
+                <Text style={styles.detailValue}>{order?.deliveryAddress?.street || "--"}</Text>
+
+                <Text style={[styles.detailLabel, styles.detailGap]}>Order Placed at</Text>
+                <Text style={styles.detailValue}>{formatDateTime(order.createdAt)}</Text>
+              </View>
+            </ScrollView>
+
+            <View style={styles.bottomActions}>
+              {!canCancel && (
                 <Pressable
-                  onPress={() => onCancel(order._id)}
-                  disabled={isCancelling}
-                  className="py-4 rounded-2xl shadow-lg active:bg-red-700"
-                  style={{ backgroundColor: "#DC2626", opacity: 1 }}
+                  style={[styles.actionBtn, styles.secondaryBtn]}
+                  onPress={() => Alert.alert("Coming Soon", "Rate order feature will be available soon")}
                 >
-                  {isCancelling ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <View className="flex-row items-center justify-center">
-                      <X size={20} color="white" />
-                      <Text className="text-white text-center font-bold text-lg ml-2">
-                        Cancel Order
-                      </Text>
-                    </View>
-                  )}
+                  <Text style={styles.secondaryBtnText}>Rate Order</Text>
                 </Pressable>
-              </View>
-            )}
-          </ScrollView>
+              )}
+
+              {canCancel ? (
+                <Pressable
+                  style={[styles.actionBtn, styles.cancelBtn]}
+                  disabled={isCancelling}
+                  onPress={() => onCancel(order._id)}
+                >
+                  <Text style={styles.primaryBtnText}>
+                    {isCancelling ? "Cancelling..." : "Cancel Order"}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={[styles.actionBtn, styles.primaryBtn]}
+                  disabled={isOrderingAgain}
+                  onPress={onOrderAgain}
+                >
+                  <Text style={styles.primaryBtnText}>
+                    {isOrderingAgain ? "Adding..." : "Order Again"}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          </>
         )}
+
+        <Pressable style={styles.closeFab} onPress={onClose}>
+          <X size={20} color="#0F172A" strokeWidth={2.4} />
+        </Pressable>
       </SafeAreaView>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#EEF4FF",
+  },
+  loaderWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loaderText: {
+    marginTop: 10,
+    color: "#607FA8",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  topHeader: {
+    backgroundColor: "#F5F8FF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#D6E4FF",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: "#D6E4FF",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F8FAFF",
+  },
+  headerTextWrap: {
+    flex: 1,
+    marginHorizontal: 10,
+  },
+  orderIdText: {
+    color: "#123C7A",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  itemCountText: {
+    color: "#5F7EA8",
+    fontSize: 14,
+    marginTop: 1,
+    fontWeight: "500",
+  },
+  helpBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: "#BFD6FF",
+    paddingHorizontal: 12,
+    backgroundColor: "#EEF4FF",
+  },
+  helpBtnText: {
+    marginLeft: 6,
+    color: "#2563EB",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 110,
+  },
+  sectionCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D9E6FF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 24,
+    padding: 14,
+    marginBottom: 12,
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#D9E6FF",
+    paddingBottom: 12,
+    marginBottom: 12,
+  },
+  statusIconBox: {
+    width: 58,
+    height: 58,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusIconBoxDefault: {
+    backgroundColor: "#EAF2FF",
+  },
+  statusIconBoxDelivered: {
+    backgroundColor: "#EAF8EF",
+  },
+  statusIconBoxFailed: {
+    backgroundColor: "#FFECEF",
+  },
+  statusTextWrap: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  timelineWrap: {
+    flexDirection: "row",
+    marginBottom: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DFE9FF",
+  },
+  timelineStep: {
+    flex: 1,
+    alignItems: "center",
+    position: "relative",
+  },
+  timelineDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    marginBottom: 6,
+  },
+  timelineDotActive: {
+    backgroundColor: "#2F7FF7",
+  },
+  timelineDotIdle: {
+    backgroundColor: "#C9D8F1",
+  },
+  timelineText: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  timelineTextActive: {
+    color: "#245AAE",
+  },
+  timelineTextIdle: {
+    color: "#8AA1C5",
+  },
+  timelineLine: {
+    position: "absolute",
+    top: 4,
+    right: -34,
+    width: 68,
+    height: 1.2,
+  },
+  timelineLineActive: {
+    backgroundColor: "#7EB0FF",
+  },
+  timelineLineIdle: {
+    backgroundColor: "#D8E4F5",
+  },
+  statusTitle: {
+    color: "#123C7A",
+    fontSize: 23,
+    fontWeight: "800",
+  },
+  statusTitleDelivered: {
+    color: "#1E7A44",
+  },
+  statusTitleFailed: {
+    color: "#B42338",
+  },
+  statusSubText: {
+    color: "#607FA8",
+    fontSize: 14,
+    marginTop: 2,
+  },
+  sectionTitle: {
+    color: "#184785",
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 10,
+  },
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  itemThumbBox: {
+    width: 58,
+    height: 58,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#EAF2FF",
+  },
+  itemThumb: {
+    width: "100%",
+    height: "100%",
+  },
+  itemThumbFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  itemInfoCol: {
+    flex: 1,
+    marginHorizontal: 10,
+  },
+  itemName: {
+    color: "#1D4E94",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  itemMeta: {
+    color: "#607FA8",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  itemPrice: {
+    color: "#123C7A",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  billRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  billLabel: {
+    color: "#607FA8",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  billValue: {
+    color: "#174B90",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  billDivider: {
+    height: 1,
+    backgroundColor: "#D9E6FF",
+    marginVertical: 4,
+  },
+  billTotalLabel: {
+    color: "#123C7A",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  billTotalValue: {
+    color: "#123C7A",
+    fontSize: 21,
+    fontWeight: "800",
+  },
+  detailLabel: {
+    color: "#607FA8",
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  detailValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  detailValue: {
+    color: "#123C7A",
+    fontSize: 17,
+    fontWeight: "700",
+    marginRight: 6,
+  },
+  detailGap: {
+    marginTop: 10,
+  },
+  bottomActions: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#D9E6FF",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+  },
+  actionBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryBtn: {
+    borderWidth: 1.5,
+    borderColor: "#8CB6FF",
+    backgroundColor: "#F2F7FF",
+    marginRight: 8,
+  },
+  secondaryBtnText: {
+    color: "#245BD6",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  primaryBtn: {
+    backgroundColor: "#2563EB",
+    marginLeft: 8,
+  },
+  cancelBtn: {
+    backgroundColor: "#B23A48",
+  },
+  primaryBtnText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  closeFab: {
+    position: "absolute",
+    right: 12,
+    top: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(37,99,235,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
