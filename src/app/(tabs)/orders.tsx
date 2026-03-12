@@ -4,6 +4,7 @@ import { AlertCircle, RefreshCw, ShoppingBag } from "lucide-react-native";
 import React from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   Text,
   View,
@@ -12,10 +13,10 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { OrderCard } from "../../components/orders/OrderCard";
-import { OrderDetailsModal } from "../../components/orders/OrderDetailsModal";
-import { useOrders } from "../../hooks/useOrders";
-import { useSmartRefresh } from "../../hooks/useSmartRefresh";
+import { OrderCard } from "@/components/orders/OrderCard";
+import { OrderDetailsModal } from "@/components/orders/OrderDetailsModal";
+import { useOrders } from "@/hooks/useOrders";
+import { useSmartRefresh } from "@/hooks/useSmartRefresh";
 
 export default function Orders() {
   const router = useRouter();
@@ -27,8 +28,10 @@ export default function Orders() {
     isLoadingDetails,
     showDetailsModal,
     isCancelling,
+    isOrderingAgain,
     handleOrderPress,
     handleCancelOrder,
+    handleOrderAgain,
     handleCloseModal,
     refetch,
   } = useOrders();
@@ -44,7 +47,13 @@ export default function Orders() {
       <OrderCard
         order={item}
         onPress={() => handleOrderPress(item?._id ?? item?.id)}
-        isCancelling={isCancelling && selectedOrder?._id === item._id}
+        isCancelling={
+          (isCancelling && selectedOrder?._id === item._id) || isOrderingAgain
+        }
+        onRateOrder={() =>
+          Alert.alert("Coming Soon", "Rate order feature will be available soon")
+        }
+        onOrderAgain={() => handleOrderAgain(item)}
       />
     );
   };
@@ -97,11 +106,10 @@ export default function Orders() {
   }
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-gray-50">
-      {/* Premium Header */}
-      <View className="bg-white px-6 py-5 shadow-sm border-b border-gray-100">
-        <Text className="text-3xl font-bold text-gray-800 mb-1">My Orders</Text>
-        <Text className="text-gray-500 font-medium">
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
+      <View style={styles.headerWrap}>
+        <Text style={styles.headerTitle}>Orders</Text>
+        <Text style={styles.headerSubTitle}>
           {orders.length} {orders.length === 1 ? 'order' : 'orders'} in total
         </Text>
       </View>
@@ -120,7 +128,7 @@ export default function Orders() {
         scrollEventThrottle={16}
         ListHeaderComponent={<View style={styles.header} />}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View className="h-3" />}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
       
       <OrderDetailsModal
@@ -130,12 +138,38 @@ export default function Orders() {
         onClose={handleCloseModal}
         onCancel={handleCancelOrder}
         isCancelling={isCancelling}
+        isOrderingAgain={isOrderingAgain}
+        onOrderAgain={() => handleOrderAgain(selectedOrder)}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: "#EEF4FF" },
+  headerWrap: {
+    backgroundColor: "#F5F8FF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#D6E4FF",
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    textAlign: "center",
+    color: "#123C7A",
+    fontSize: 34,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+  headerSubTitle: {
+    textAlign: "center",
+    color: "#5F7EA8",
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: "600",
+  },
   container: { flex: 1 },
-  header: { padding: 16 /* … */ },
+  header: { height: 12 },
+  separator: { height: 14 },
 });

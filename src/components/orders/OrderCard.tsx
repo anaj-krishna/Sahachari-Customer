@@ -1,184 +1,207 @@
-// components/orders/OrderCard.tsx
-import { Calendar, CreditCard, Package } from "lucide-react-native";
-import { Image, Pressable, Text, View } from "react-native";
+import {
+  CheckCircle2,
+  ChevronRight,
+  CircleX,
+  Package,
+} from "lucide-react-native";
+import React from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
-export const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    PLACED: "bg-yellow-100",
-    CONFIRMED: "bg-blue-100",
-    SHIPPED: "bg-purple-100",
-    DELIVERED: "bg-green-100",
-    CANCELLED: "bg-red-100",
+const S3_BASE = (process.env.EXPO_PUBLIC_S3_BASE_URL || "").replace(/\/$/, "");
+const API_BASE = (process.env.EXPO_PUBLIC_API_URL || "").replace(/\/$/, "");
+
+const resolveImageUri = (image: any): string | undefined => {
+  const base = S3_BASE || API_BASE;
+
+  const toAbsolute = (value: any): string | undefined => {
+    if (typeof value !== "string" || !value.trim()) return undefined;
+    if (/^https?:\/\//i.test(value)) return value;
+    if (!base) return undefined;
+    return `${base}/${value.replace(/^\/+/, "")}`;
   };
-  return colors[status] || "bg-gray-100";
+
+  if (!image) return undefined;
+  if (typeof image === "string") return toAbsolute(image);
+  return toAbsolute(image.url || image.key || image.path);
 };
 
-const getStatusTextColor = (status: string) => {
-  const colors: Record<string, string> = {
-    PLACED: "text-yellow-800",
-    CONFIRMED: "text-blue-800",
-    SHIPPED: "text-purple-800",
-    DELIVERED: "text-green-800",
-    CANCELLED: "text-red-800",
+const formatStatus = (status: string) => {
+  const map: Record<string, string> = {
+    PLACED: "Order placed",
+    READY: "Order ready",
+    CONFIRMED: "Order confirmed",
+    SHIPPED: "Order shipped",
+    DELIVERED: "Order delivered",
+    FAILED: "Order failed",
+    CANCELLED: "Order cancelled",
   };
-  return colors[status] || "text-gray-800";
+  return map[status] || "Order updated";
 };
 
-const getStatusEmoji = (status: string) => {
-  const emojis: Record<string, string> = {
-    PLACED: "📦",
-    CONFIRMED: "✅",
-    SHIPPED: "🚚",
-    DELIVERED: "🎉",
-    CANCELLED: "❌",
-  };
-  return emojis[status] || "📋";
+const formatPlacedAt = (dateString?: string) => {
+  if (!dateString) return "Placed recently";
+  const date = new Date(dateString);
+
+  const day = date.getDate();
+  const suffix =
+    day % 10 === 1 && day !== 11
+      ? "st"
+      : day % 10 === 2 && day !== 12
+      ? "nd"
+      : day % 10 === 3 && day !== 13
+      ? "rd"
+      : "th";
+
+  const month = date.toLocaleString("en-IN", { month: "short" });
+  const year = date.getFullYear();
+  const time = date
+    .toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .toLowerCase();
+
+  return `Placed at ${day}${suffix} ${month} ${year}, ${time}`;
 };
 
-export const OrderCard = ({ order, onPress, isCancelling }: Props) => {
+const formatAmount = (value: any) => {
+  const amount = Number(value || 0);
+  if (!Number.isFinite(amount)) return "0";
+  return amount.toFixed(0);
+};
+
+const getStatusTheme = (status: string) => {
+  const theme: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+    PLACED: { bg: "#EEF4FF", border: "#C9DBFF", text: "#245AAE", dot: "#2F7FF7" },
+    READY: { bg: "#EAF2FF", border: "#BCD6FF", text: "#1F5AB1", dot: "#2A6FE8" },
+    CONFIRMED: { bg: "#EDF3FF", border: "#C6D8FF", text: "#285FAF", dot: "#3B7BF0" },
+    SHIPPED: { bg: "#EEF2FF", border: "#CBD5F5", text: "#3F5DB2", dot: "#5573D9" },
+    DELIVERED: { bg: "#E9F8EF", border: "#BEE7CD", text: "#1E7A44", dot: "#16A34A" },
+    FAILED: { bg: "#FFECEF", border: "#F4C5CC", text: "#C24153", dot: "#DC2626" },
+    CANCELLED: { bg: "#FFECEF", border: "#F4C5CC", text: "#C24153", dot: "#DC2626" },
+  };
+
+  return theme[status] || theme.PLACED;
+};
+
+const getStatusTitleColor = (status: string) => {
+  if (status === "DELIVERED") return "#1E7A44";
+  if (status === "FAILED" || status === "CANCELLED") return "#B42338";
+  return "#1D4E94";
+};
+
+export const OrderCard = ({
+  order,
+  onPress,
+  isCancelling,
+  onRateOrder,
+  onOrderAgain,
+}: Props) => {
   if (!order) return null;
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
+  const status = String(order.status || "").toUpperCase();
+  const isDelivered = status === "DELIVERED";
+  const isFailed = status === "FAILED";
+  const isCancelled = status === "CANCELLED";
+  const previewItems = order.items?.slice(0, 5) || [];
+  const statusTheme = getStatusTheme(status);
 
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white rounded-2xl mx-4 overflow-hidden shadow-sm active:opacity-90"
+      disabled={isCancelling}
+      style={styles.card}
+      android_ripple={{ color: "#EAF2EC" }}
     >
-      {/* Header with gradient */}
-      <View className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5">
-        <View className="flex-row justify-between items-start mb-3">
-          <View className="flex-1">
-            <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-              Order ID
-            </Text>
-            <Text className="text-lg font-bold text-gray-800" numberOfLines={1}>
-              #{order.checkoutId}
+      <View style={styles.contentWrap}>
+        <View style={styles.thumbRow}>
+          {previewItems.map((item: any, idx: number) => {
+            const imageUri =
+              resolveImageUri(item?.productId?.images?.[0]) ||
+              resolveImageUri(item?.productId?.image) ||
+              resolveImageUri(item?.image);
+
+            return (
+              <View key={idx} style={styles.thumbBox}>
+                {imageUri ? (
+                  <Image source={{ uri: imageUri }} style={styles.thumbImg} />
+                ) : (
+                  <View style={styles.thumbFallback}>
+                    <Package size={18} color="#7C8E84" strokeWidth={2.3} />
+                  </View>
+                )}
+              </View>
+            );
+          })}
+
+          {order.items?.length > 5 && (
+            <View style={styles.extraThumb}>
+              <Text style={styles.extraThumbText}>+{order.items.length - 5}</Text>
+            </View>
+          )}
+
+          <View
+            style={[
+              styles.statusChip,
+              {
+                backgroundColor: statusTheme.bg,
+                borderColor: statusTheme.border,
+              },
+            ]}
+          >
+            <View style={[styles.statusDot, { backgroundColor: statusTheme.dot }]} />
+            <Text style={[styles.statusChipText, { color: statusTheme.text }]}>
+              {status}
             </Text>
           </View>
-          <View
-            className={`px-4 py-2 rounded-full flex-row items-center ${getStatusColor(order.status)} shadow-sm`}
-          >
-            <Text className="text-xl mr-1">{getStatusEmoji(order.status)}</Text>
-            <Text
-              className={`font-bold text-xs uppercase ${getStatusTextColor(order.status)}`}
-            >
-              {order.status}
+        </View>
+
+        <View style={styles.mainRow}>
+          <View style={styles.leftCol}>
+            <View style={styles.statusRow}>
+              <Text style={[styles.statusText, { color: getStatusTitleColor(status) }]} numberOfLines={1}>
+                {formatStatus(status)}
+              </Text>
+              {isFailed || isCancelled ? (
+                <CircleX size={21} color="#DC2626" strokeWidth={2.8} />
+              ) : isDelivered ? (
+                <CheckCircle2 size={21} color="#16A34A" strokeWidth={2.8} />
+              ) : (
+                <CircleX size={21} color="#8DA7D3" strokeWidth={2.8} />
+              )}
+            </View>
+            <Text style={styles.timeText} numberOfLines={1}>
+              {formatPlacedAt(order.createdAt)}
             </Text>
+            <Text style={styles.metaText} numberOfLines={1}>
+              Repeat-ready basket • {order.items?.length || 0} items
+            </Text>
+          </View>
+
+          <View style={styles.amountWrap}>
+            <Text style={styles.amountText}>₹{formatAmount(order.totalAmount)}</Text>
+            <ChevronRight size={22} color="#1D2A24" strokeWidth={2.8} />
           </View>
         </View>
       </View>
 
-      <View className="p-5">
-        {/* Items Preview */}
-        <View className="mb-4">
-          <View className="flex-row items-center mb-3">
-            <View className="bg-green-100 p-2 rounded-lg mr-2">
-              <Package size={16} color="#10B981" />
-            </View>
-            <Text className="text-base font-bold text-gray-800">
-              {order.items?.length}{" "}
-              {order.items?.length === 1 ? "Item" : "Items"}
-            </Text>
-          </View>
+      <View style={styles.footerRow}>
+        {isDelivered && (
+          <Pressable
+            style={[styles.footerBtn, styles.footerDivider]}
+            onPress={onRateOrder}
+          >
+            <Text style={styles.rateText}>Rate Order</Text>
+          </Pressable>
+        )}
 
-          {order.items?.slice(0, 2).map((orderItem: any, idx: number) => (
-            <View key={idx} className="flex-row items-center mb-2">
-              <View className="flex-1 ml-3">
-                <View className="flex-row items-center">
-                  <Image
-                    source={{ uri: orderItem.productId?.images?.[0] }}
-                    className="w-5 h-5 rounded-md bg-gray-100 mr-2"
-                  />
-                  <Text
-                    className="text-sm font-semibold text-gray-800 flex-1"
-                    numberOfLines={1}
-                  >
-                    {orderItem.productId?.name}
-                  </Text>
-                </View>
-                <Text className="text-xs text-gray-500">
-                  Qty: {orderItem.quantity}
-                </Text>
-              </View>
-              <Text className="text-sm font-bold text-blue-600">
-                ₹{(orderItem.quantity * orderItem.price).toFixed(2)}
-              </Text>
-            </View>
-          ))}
-
-          {order.items?.length > 2 && (
-            <Text className="text-xs text-blue-600 font-semibold text-center mt-1">
-              +{order.items.length - 2} more items
-            </Text>
-          )}
-        </View>
-
-        {/* Footer Info */}
-        <View className="pt-4 border-t border-gray-100 space-y-3">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              <View className="bg-green-100 p-2 rounded-lg mr-2">
-                <CreditCard size={14} color="#10B981" />
-              </View>
-              <Text className="text-sm text-gray-600">Items Subtotal</Text>
-            </View>
-            <Text className="text-sm font-bold text-gray-700">
-              ₹{order.itemsSubtotal?.toFixed(2)}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              <View className="bg-orange-100 p-2 rounded-lg mr-2">
-                <CreditCard size={14} color="#FB923C" />
-              </View>
-              <Text className="text-sm text-gray-600">Delivery Charge</Text>
-            </View>
-            <Text className="text-sm font-bold text-orange-600">
-              ₹{order.deliveryCharge?.toFixed(2)}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center justify-between pt-2 border-t border-gray-100">
-            <View className="flex-row items-center">
-              <View className="bg-blue-100 p-2 rounded-lg mr-2">
-                <CreditCard size={14} color="#3B82F6" />
-              </View>
-              <Text className="text-sm text-gray-600 font-semibold">
-                Total Amount
-              </Text>
-            </View>
-            <Text className="text-xl font-bold text-blue-600">
-              ₹{order.totalAmount?.toFixed(2)}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              <View className="bg-purple-100 p-2 rounded-lg mr-2">
-                <Calendar size={14} color="#8B5CF6" />
-              </View>
-              <Text className="text-sm text-gray-600">Order Date</Text>
-            </View>
-            <Text className="text-sm font-semibold text-gray-700">
-              {formatDate(order.createdAt)}
-            </Text>
-          </View>
-
-          {/* View Details Button
-          <Pressable className="bg-blue-600 py-3 rounded-xl flex-row items-center justify-center mt-2 active:bg-blue-700">
-            <Text className="text-white font-bold text-sm mr-1">View Details</Text>
-            <ChevronRight size={16} color="white" />
-          </Pressable> */}
-        </View>
+        <Pressable
+          style={[styles.footerBtn, !isDelivered && styles.footerBtnFull]}
+          onPress={onOrderAgain}
+        >
+          <Text style={styles.againText}>Order Again</Text>
+        </Pressable>
       </View>
     </Pressable>
   );
@@ -188,4 +211,155 @@ type Props = {
   order: any;
   onPress: () => void;
   isCancelling: boolean;
+  onRateOrder: () => void;
+  onOrderAgain: () => void;
 };
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 30,
+    marginHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#DCE3D8",
+    overflow: "hidden",
+    shadowColor: "#0F1B16",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+  contentWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 18,
+  },
+  thumbRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  thumbBox: {
+    width: 62,
+    height: 62,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: "#E8EEE6",
+    marginRight: 8,
+  },
+  thumbImg: {
+    width: "100%",
+    height: "100%",
+  },
+  thumbFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  extraThumb: {
+    width: 62,
+    height: 62,
+    borderRadius: 14,
+    backgroundColor: "#DCE6D9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  extraThumbText: {
+    color: "#2E4438",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  statusChip: {
+    marginLeft: "auto",
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    marginRight: 7,
+  },
+  statusChipText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+  },
+  mainRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  leftCol: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  statusText: {
+    color: "#1D4E94",
+    fontSize: 20,
+    fontWeight: "800",
+    marginRight: 8,
+  },
+  timeText: {
+    color: "#607FA8",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  metaText: {
+    color: "#8EA7CC",
+    fontSize: 12,
+    marginTop: 3,
+    fontWeight: "600",
+  },
+  amountWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  amountText: {
+    color: "#123C7A",
+    fontSize: 43,
+    fontWeight: "800",
+    marginRight: 2,
+    letterSpacing: -0.6,
+  },
+  footerRow: {
+    borderTopWidth: 1,
+    borderTopColor: "#DCE3D8",
+    flexDirection: "row",
+    height: 68,
+  },
+  footerBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  footerDivider: {
+    borderRightWidth: 1,
+    borderRightColor: "#DCE3D8",
+  },
+  footerBtnFull: {
+    flex: 1,
+  },
+  rateText: {
+    color: "#2563EB",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  againText: {
+    color: "#2563EB",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+});

@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Alert } from "react-native";
-import { getOrders, getOrderById, cancelOrder } from "../services/orders.api";
+import {
+  addToCart,
+  getOrders,
+  getOrderById,
+  cancelOrder,
+} from "../services/orders.api";
 
 export function useOrders() {
   const queryClient = useQueryClient();
@@ -29,6 +34,25 @@ export function useOrders() {
     onError: () => Alert.alert("Error", "Unable to cancel order"),
   });
 
+  const orderAgainMutation = useMutation({
+    mutationFn: async (order: any) => {
+      const items = order?.items || [];
+
+      for (const item of items) {
+        const productId = item?.productId?._id || item?.productId?.id || item?.productId;
+        const quantity = Number(item?.quantity || 1);
+
+        if (!productId) continue;
+        await addToCart({ productId: String(productId), quantity: quantity > 0 ? quantity : 1 });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      Alert.alert("Success", "Items added to cart");
+    },
+    onError: () => Alert.alert("Error", "Unable to add items to cart"),
+  });
+
   const handleOrderPress = (orderId?: string) => {
     if (!orderId) return;
     setSelectedOrderId(orderId);
@@ -47,6 +71,14 @@ export function useOrders() {
     setSelectedOrderId(null);
   };
 
+  const handleOrderAgain = (order: any) => {
+    if (!order?.items?.length) {
+      Alert.alert("Info", "No items found in this order");
+      return;
+    }
+    orderAgainMutation.mutate(order);
+  };
+
   const orders = data?.orders || data || [];
 
   return {
@@ -57,8 +89,10 @@ export function useOrders() {
     isLoadingDetails,
     showDetailsModal,
     isCancelling: cancelMutation.isPending,
+    isOrderingAgain: orderAgainMutation.isPending,
     handleOrderPress,
     handleCancelOrder,
+    handleOrderAgain,
     handleCloseModal,
     refetch,
   };
