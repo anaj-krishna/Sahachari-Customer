@@ -143,7 +143,8 @@ export default function TabsLayout() {
             ),
           }}
         />
-        {/* Keep products route accessible but hide it from the tab bar */}
+        {/* Keep internal routes accessible but hide them from the tab bar */}
+        <Tabs.Screen name="chatbot" options={{ href: null }} />
         <Tabs.Screen name="products" options={{ href: null }} />
       </Tabs>
     </View>

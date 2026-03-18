@@ -6,6 +6,7 @@ import {
     Fish,
     HomeIcon,
     Leaf,
+  MessageCircle,
     Package,
     Phone,
     ShoppingCart,
@@ -25,6 +26,7 @@ import {
     Text,
     View,
 } from "react-native";
+  import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSmartRefresh } from "../../hooks/useSmartRefresh";
 import { useProducts } from "../../hooks/useProducts";
 import { useProfile } from "../../hooks/useProfile";
@@ -98,6 +100,7 @@ const CATEGORY_GRADIENTS: Record<
 
 export default function Home() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { profile } = useProfile();
   const [activeSlide, setActiveSlide] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -579,6 +582,27 @@ export default function Home() {
           {/* Premium Empty State */}
         </View>
       </ScrollView>
+
+      <Pressable
+        onPress={() => router.push("/chatbot")}
+        className="absolute right-5 items-center justify-center"
+        style={{
+          bottom: 88 + Math.max(insets.bottom, 0),
+          width: 60,
+          height: 60,
+          borderRadius: 999,
+          backgroundColor: "#2563EB",
+          shadowColor: "#1D4ED8",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.35,
+          shadowRadius: 14,
+          elevation: 12,
+          borderWidth: 2,
+          borderColor: "#DBEAFE",
+        }}
+      >
+        <MessageCircle size={24} color="#FFFFFF" strokeWidth={2.4} />
+      </Pressable>
     </View>
   );
 }
