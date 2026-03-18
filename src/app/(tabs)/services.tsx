@@ -36,7 +36,15 @@ export default function ServicesScreen() {
 
     return (
       <Pressable
-        onPress={() => router.push(`/product/${serviceId}` as any)}
+        onPress={() =>
+          router.push({
+            pathname: "/product/[id]",
+            params: {
+              id: serviceId,
+              returnTo: "services",
+            },
+          } as any)
+        }
         className="mb-4 mx-4 rounded-3xl overflow-hidden bg-white active:scale-[0.98]"
         style={styles.cardShadow}
       >
