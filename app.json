@@ -16,13 +16,18 @@
     "android": {
       "package": "com.corestoneinnovation.sahachariuser",
       "versionCode": 23,
+      "statusBar": {
+        "backgroundColor": "#FFFFFF",
+        "barStyle": "dark-content",
+        "translucent": false
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/sahachari.jpeg",
         "backgroundColor": "#0A4FD6"
       }
     },
     "splash": {
-      "image": "./assets/sahachari.jpeg",
+      "image": "./assets/image1.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A4FD6"
     },

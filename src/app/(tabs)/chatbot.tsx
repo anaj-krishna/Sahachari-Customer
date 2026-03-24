@@ -24,6 +24,8 @@ import {
   Pause,
   Trash2,
 } from "lucide-react-native";
+import { AxiosError } from "axios";
+import { ChatHistoryMessage, sendChatMessage } from "../../services/chatbot.api";
 
 type MessageKind = "text" | "audio";
 type MessageRole = "user" | "bot";
@@ -37,12 +39,7 @@ type ChatMessage = {
   audioUri?: string;
 };
 
-const BOT_REPLIES = [
-  "I can help with orders, products, services, and delivery updates.",
-  "Please share your location or requirement, and I will guide you.",
-  "For quick help, you can ask about order status or service booking.",
-  "I understood your message. Do you want a quick action suggestion?",
-];
+const MAX_HISTORY_MESSAGES = 20;
 
 function formatDuration(totalSec: number) {
   const min = Math.floor(totalSec / 60)
@@ -176,6 +173,8 @@ export default function ChatbotScreen() {
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [playbackSecById, setPlaybackSecById] = useState<Record<string, number>>({});
   const [speakingTextId, setSpeakingTextId] = useState<string | null>(null);
+  const [history, setHistory] = useState<ChatHistoryMessage[]>([]);
+  const [isSendingText, setIsSendingText] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -213,7 +212,10 @@ export default function ChatbotScreen() {
     };
   }, []);
 
-  const canSendText = useMemo(() => input.trim().length > 0, [input]);
+  const canSendText = useMemo(
+    () => input.trim().length > 0 && !isSendingText,
+    [input, isSendingText],
+  );
   const canSendAudio = useMemo(
     () => !isRecording && !!draftAudioUri && draftAudioSec > 0,
     [isRecording, draftAudioSec, draftAudioUri],
@@ -304,19 +306,7 @@ export default function ChatbotScreen() {
     );
   };
 
-  const pushBotReply = () => {
-    const randomReply = BOT_REPLIES[Math.floor(Math.random() * BOT_REPLIES.length)];
-    const botMessage: ChatMessage = {
-      id: `bot-${Date.now()}`,
-      role: "bot",
-      kind: "text",
-      text: randomReply,
-    };
-
-    setMessages((prev) => [...prev, botMessage]);
-  };
-
-  const sendMessage = () => {
+  const sendMessage = async () => {
     const trimmed = input.trim();
     if (trimmed) {
       const userMessage: ChatMessage = {
@@ -328,7 +318,59 @@ export default function ChatbotScreen() {
 
       setMessages((prev) => [...prev, userMessage]);
       setInput("");
-      setTimeout(pushBotReply, 600);
+      setIsSendingText(true);
+
+      try {
+        const response = await sendChatMessage({
+          message: trimmed,
+          history,
+        });
+
+        const botMessage: ChatMessage = {
+          id: `bot-${Date.now()}`,
+          role: "bot",
+          kind: "text",
+          text: response.reply,
+        };
+
+        setMessages((prev) => [...prev, botMessage]);
+        setHistory((prev) => {
+          const next: ChatHistoryMessage[] = [
+            ...prev,
+            { role: "user", parts: [{ text: trimmed }] },
+            { role: "model", parts: [{ text: response.reply }] },
+          ];
+          return next.slice(-MAX_HISTORY_MESSAGES);
+        });
+      } catch (error) {
+        const axiosError = error as AxiosError<{ message?: string | string[] }>;
+        const statusCode = axiosError.response?.status;
+        const apiMessage = axiosError.response?.data?.message;
+        const normalizedMessage = Array.isArray(apiMessage)
+          ? apiMessage[0]
+          : apiMessage;
+
+        let fallbackMessage = "Saha is unavailable right now. Please try again.";
+        if (statusCode === 401) {
+          fallbackMessage = "Please login again to continue chatting with Saha.";
+        } else if (statusCode === 429) {
+          fallbackMessage = "Saha is too busy right now, please try again in a moment!";
+        } else if (statusCode === 400) {
+          fallbackMessage = "Invalid chat request. Please send a valid message.";
+        }
+
+        const botErrorMessage: ChatMessage = {
+          id: `bot-error-${Date.now()}`,
+          role: "bot",
+          kind: "text",
+          text: normalizedMessage || fallbackMessage,
+        };
+
+        setMessages((prev) => [...prev, botErrorMessage]);
+      } finally {
+        setIsSendingText(false);
+      }
+
       return;
     }
 
@@ -640,6 +682,7 @@ export default function ChatbotScreen() {
             placeholder="Type a message"
             placeholderTextColor="#94a3b8"
             multiline
+            editable={!isSendingText}
             style={styles.input}
           />
 
@@ -657,7 +700,9 @@ export default function ChatbotScreen() {
           </Pressable>
 
           <Pressable
-            onPress={sendMessage}
+            onPress={() => {
+              void sendMessage();
+            }}
             disabled={!canSend}
             style={[styles.iconButton, canSend ? styles.sendButton : styles.sendButtonDisabled]}
           >
