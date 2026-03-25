@@ -90,9 +90,11 @@ export function OrderDetailsModal({
   const items = order?.items || [];
   const status = String(order?.status || "").toUpperCase();
   const canCancel = status === "PLACED";
+  const isPlaced = status === "PLACED";
   const isDelivered = status === "DELIVERED";
   const isFailed = status === "FAILED";
   const isCancelled = status === "CANCELLED";
+  const isAcceptedOrUpdated = ["READY", "CONFIRMED", "SHIPPED", "DELIVERED"].includes(status);
   const timelineIndex = getTimelineIndex(status);
 
   const receiverName =
@@ -144,24 +146,26 @@ export function OrderDetailsModal({
             >
               <View style={styles.sectionCard}>
                 <View style={styles.statusRow}>
-                  <View
-                    style={[
-                      styles.statusIconBox,
-                      isDelivered
-                        ? styles.statusIconBoxDelivered
-                        : isFailed || isCancelled
-                        ? styles.statusIconBoxFailed
-                        : styles.statusIconBoxDefault,
-                    ]}
-                  >
-                    {isFailed || isCancelled ? (
-                      <CircleX size={30} color="#DC2626" strokeWidth={2.8} />
-                    ) : (
-                      <Check size={30} color={isDelivered ? "#16A34A" : "#2563EB"} strokeWidth={2.8} />
-                    )}
-                  </View>
+                  {!isPlaced && (
+                    <View
+                      style={[
+                        styles.statusIconBox,
+                        isDelivered
+                          ? styles.statusIconBoxDelivered
+                          : isFailed || isCancelled
+                          ? styles.statusIconBoxFailed
+                          : styles.statusIconBoxDefault,
+                      ]}
+                    >
+                      {isFailed || isCancelled ? (
+                        <CircleX size={30} color="#DC2626" strokeWidth={2.8} />
+                      ) : isAcceptedOrUpdated ? (
+                        <Check size={30} color={isDelivered ? "#16A34A" : "#2563EB"} strokeWidth={2.8} />
+                      ) : null}
+                    </View>
+                  )}
 
-                  <View style={styles.statusTextWrap}>
+                  <View style={[styles.statusTextWrap, isPlaced && styles.statusTextWrapNoIcon]}>
                     <Text
                       style={[
                         styles.statusTitle,
@@ -446,6 +450,9 @@ const styles = StyleSheet.create({
   statusTextWrap: {
     marginLeft: 10,
     flex: 1,
+  },
+  statusTextWrapNoIcon: {
+    marginLeft: 0,
   },
   timelineWrap: {
     flexDirection: "row",

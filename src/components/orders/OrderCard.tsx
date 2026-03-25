@@ -101,9 +101,11 @@ export const OrderCard = ({
   if (!order) return null;
 
   const status = String(order.status || "").toUpperCase();
+  const isPlaced = status === "PLACED";
   const isDelivered = status === "DELIVERED";
   const isFailed = status === "FAILED";
   const isCancelled = status === "CANCELLED";
+  const isAcceptedOrUpdated = ["READY", "CONFIRMED", "SHIPPED", "DELIVERED"].includes(status);
   const previewItems = order.items?.slice(0, 5) || [];
   const statusTheme = getStatusTheme(status);
 
@@ -165,10 +167,10 @@ export const OrderCard = ({
               </Text>
               {isFailed || isCancelled ? (
                 <CircleX size={21} color="#DC2626" strokeWidth={2.8} />
-              ) : isDelivered ? (
+              ) : isAcceptedOrUpdated ? (
                 <CheckCircle2 size={21} color="#16A34A" strokeWidth={2.8} />
               ) : (
-                <CircleX size={21} color="#8DA7D3" strokeWidth={2.8} />
+                !isPlaced && <CheckCircle2 size={21} color="#3B82F6" strokeWidth={2.8} />
               )}
             </View>
             <Text style={styles.timeText} numberOfLines={1}>

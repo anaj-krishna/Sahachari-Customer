@@ -181,13 +181,25 @@ export default function ProductDetails() {
     }, [handleBack]),
   );
 
+  const openCartWithReturnContext = () => {
+    router.push({
+      pathname: "/(tabs)/cart",
+      params: {
+        returnProductId: id,
+        fromCategory,
+        fromStoreId,
+        returnTo: returnTo ?? (isService ? "services" : "products"),
+      },
+    } as any);
+  };
+
 
   const handleAddToCartClick = () => {
     // For services, automatically use quantity 1
     if (isService) {
       handleAddToCart(1).then((success) => {
         if (success) {
-          router.push("/(tabs)/cart");
+          openCartWithReturnContext();
         }
       });
     } else {
@@ -199,7 +211,7 @@ export default function ProductDetails() {
     const success = await handleAddToCart(selectedQuantity);
     if (success) {
       // Redirect to cart page on success
-      router.push("/(tabs)/cart");
+      openCartWithReturnContext();
     }
     return success;
   };

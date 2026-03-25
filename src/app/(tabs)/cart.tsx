@@ -1,8 +1,10 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowRight, ShoppingBag } from "lucide-react-native";
-import React from "react";
+import React, { useCallback } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   FlatList,
   Pressable,
   RefreshControl,
@@ -18,6 +20,13 @@ import { useSmartRefresh } from "../../hooks/useSmartRefresh";
 
 export default function Cart() {
   const router = useRouter();
+  const { returnProductId, fromCategory, fromStoreId, returnTo } =
+    useLocalSearchParams<{
+      returnProductId?: string;
+      fromCategory?: string;
+      fromStoreId?: string;
+      returnTo?: string;
+    }>();
   const {
     cart,
     isLoading,
@@ -42,6 +51,39 @@ export default function Cart() {
   const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
     await refetch();
   });
+
+  const handleBackToSource = useCallback(() => {
+    if (returnProductId) {
+      router.replace({
+        pathname: "/product/[id]",
+        params: {
+          id: returnProductId,
+          fromCategory,
+          fromStoreId,
+          returnTo,
+        },
+      } as any);
+      return true;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return true;
+    }
+
+    return false;
+  }, [fromCategory, fromStoreId, returnProductId, returnTo, router]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => handleBackToSource(),
+      );
+
+      return () => subscription.remove();
+    }, [handleBackToSource]),
+  );
 
   if (isLoading)
     return (
