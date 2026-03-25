@@ -296,7 +296,7 @@ export function OrderDetailsModal({
             </ScrollView>
 
             <View style={styles.bottomActions}>
-              {!canCancel && (
+              {isDelivered && (
                 <Pressable
                   style={[styles.actionBtn, styles.secondaryBtn]}
                   onPress={() => Alert.alert("Coming Soon", "Rate order feature will be available soon")}
