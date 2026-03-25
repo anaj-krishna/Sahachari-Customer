@@ -135,6 +135,16 @@ export default function ProductDetails() {
   };
 
   const handleBack = useCallback(() => {
+    if (returnTo === "cart") {
+      router.replace("/(tabs)/cart" as any);
+      return;
+    }
+
+    if (returnTo === "orders") {
+      router.replace("/(tabs)/orders" as any);
+      return;
+    }
+
     if (returnTo === "services") {
       router.replace("/services" as any);
       return;

@@ -40,6 +40,15 @@ export default function Orders() {
     await refetch();
   });
 
+  const openOrderProduct = (productId?: string) => {
+    if (!productId) return;
+
+    router.push({
+      pathname: "/product/[id]",
+      params: { id: productId, returnTo: "orders" },
+    } as any);
+  };
+
   const renderOrder = ({ item }: { item: any }) => {
     if (!item) return null;
 
@@ -54,6 +63,7 @@ export default function Orders() {
           Alert.alert("Coming Soon", "Rate order feature will be available soon")
         }
         onOrderAgain={() => handleOrderAgain(item)}
+        onProductPress={openOrderProduct}
       />
     );
   };
@@ -140,6 +150,7 @@ export default function Orders() {
         isCancelling={isCancelling}
         isOrderingAgain={isOrderingAgain}
         onOrderAgain={() => handleOrderAgain(selectedOrder)}
+        onOpenProduct={openOrderProduct}
       />
     </SafeAreaView>
   );

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, Pressable, ActivityIndicator } from 'react-native';
 import { Minus, Plus, Trash2 } from 'lucide-react-native';
 
-export function CartItem({ item, isUpdating, onQuantityChange, onRemove, parseNumber }: any) {
+export function CartItem({ item, isUpdating, onQuantityChange, onRemove, parseNumber, onOpenProduct }: any) {
   const s3Base = (process.env.EXPO_PUBLIC_S3_BASE_URL || "").replace(/\/$/, "");
   const rawImg = item.productId?.images?.[0];
   const imgUrl = rawImg ? (/^https?:\/\//.test(rawImg) ? rawImg : `${s3Base}/${String(rawImg).replace(/^\/+/, "")}`) : undefined;
@@ -10,15 +10,26 @@ export function CartItem({ item, isUpdating, onQuantityChange, onRemove, parseNu
   const itemQuantity = parseNumber(item.quantity ?? item.qty ?? 0);
   const itemPrice = parseNumber(item.productId?.price ?? item.price ?? 0);
 
+  const productId =
+    item?.productId?._id ||
+    item?.productId?.id ||
+    (typeof item?.productId === "string" ? item.productId : undefined);
+
   return (
     <View className="bg-white rounded-2xl mb-4 shadow-sm overflow-hidden">
       <View className="flex-row p-4">
-        <View className="bg-gray-100 rounded-xl overflow-hidden">
+        <Pressable
+          onPress={() => productId && onOpenProduct?.(productId)}
+          disabled={!productId}
+          className="bg-gray-100 rounded-xl overflow-hidden"
+        >
           <Image source={{ uri: imgUrl }} style={{ width: 100, height: 100 }} resizeMode="cover" />
-        </View>
+        </Pressable>
         <View className="flex-1 ml-3 justify-center">
           <View>
-            <Text className="font-semibold text-gray-800 text-base" numberOfLines={2}>{item.productId?.name}</Text>
+            <Pressable onPress={() => productId && onOpenProduct?.(productId)} disabled={!productId}>
+              <Text className="font-semibold text-gray-800 text-base" numberOfLines={2}>{item.productId?.name}</Text>
+            </Pressable>
             <Text className="text-blue-600 font-bold text-lg mt-1">₹{itemPrice.toFixed(2)}</Text>
           </View>
           <View className="flex-row items-center mt-2">

@@ -139,6 +139,12 @@ export default function Cart() {
                 onQuantityChange={handleQuantityChange}
                 onRemove={handleRemoveItem}
                 parseNumber={parseNumber}
+                onOpenProduct={(productId: string) =>
+                  router.push({
+                    pathname: "/product/[id]",
+                    params: { id: productId, returnTo: "cart" },
+                  } as any)
+                }
               />
             )}
           />

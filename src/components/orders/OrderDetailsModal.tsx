@@ -85,6 +85,7 @@ export function OrderDetailsModal({
   isCancelling,
   isOrderingAgain,
   onOrderAgain,
+  onOpenProduct,
 }: any) {
   const currentUserName = useAuthStore((s) => s.user?.name);
   const items = order?.items || [];
@@ -229,8 +230,18 @@ export function OrderDetailsModal({
                   const qty = Number(item?.quantity || 0);
                   const price = Number(item?.price || 0);
 
+                  const productId =
+                    item?.productId?._id ||
+                    item?.productId?.id ||
+                    (typeof item?.productId === "string" ? item.productId : undefined);
+
                   return (
-                    <View key={idx} style={styles.itemRow}>
+                    <Pressable
+                      key={idx}
+                      style={styles.itemRow}
+                      onPress={() => productId && onOpenProduct?.(productId)}
+                      disabled={!productId}
+                    >
                       <View style={styles.itemThumbBox}>
                         {imageUri ? (
                           <Image source={{ uri: imageUri }} style={styles.itemThumb} />
@@ -249,7 +260,7 @@ export function OrderDetailsModal({
                       </View>
 
                       <Text style={styles.itemPrice}>₹{money(price * qty)}</Text>
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>

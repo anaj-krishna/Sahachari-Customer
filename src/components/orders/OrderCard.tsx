@@ -97,6 +97,7 @@ export const OrderCard = ({
   isCancelling,
   onRateOrder,
   onOrderAgain,
+  onProductPress,
 }: Props) => {
   if (!order) return null;
 
@@ -125,7 +126,20 @@ export const OrderCard = ({
               resolveImageUri(item?.image);
 
             return (
-              <View key={idx} style={styles.thumbBox}>
+              <Pressable
+                key={idx}
+                style={styles.thumbBox}
+                onPress={() => {
+                  const productId =
+                    item?.productId?._id ||
+                    item?.productId?.id ||
+                    (typeof item?.productId === "string" ? item.productId : undefined);
+
+                  if (productId) {
+                    onProductPress(productId);
+                  }
+                }}
+              >
                 {imageUri ? (
                   <Image source={{ uri: imageUri }} style={styles.thumbImg} />
                 ) : (
@@ -133,7 +147,7 @@ export const OrderCard = ({
                     <Package size={18} color="#7C8E84" strokeWidth={2.3} />
                   </View>
                 )}
-              </View>
+              </Pressable>
             );
           })}
 
@@ -215,6 +229,7 @@ type Props = {
   isCancelling: boolean;
   onRateOrder: () => void;
   onOrderAgain: () => void;
+  onProductPress: (productId: string) => void;
 };
 
 const styles = StyleSheet.create({
