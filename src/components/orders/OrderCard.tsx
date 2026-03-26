@@ -97,13 +97,16 @@ export const OrderCard = ({
   isCancelling,
   onRateOrder,
   onOrderAgain,
+  onProductPress,
 }: Props) => {
   if (!order) return null;
 
   const status = String(order.status || "").toUpperCase();
+  const isPlaced = status === "PLACED";
   const isDelivered = status === "DELIVERED";
   const isFailed = status === "FAILED";
   const isCancelled = status === "CANCELLED";
+  const isAcceptedOrUpdated = ["READY", "CONFIRMED", "SHIPPED", "DELIVERED"].includes(status);
   const previewItems = order.items?.slice(0, 5) || [];
   const statusTheme = getStatusTheme(status);
 
@@ -123,7 +126,20 @@ export const OrderCard = ({
               resolveImageUri(item?.image);
 
             return (
-              <View key={idx} style={styles.thumbBox}>
+              <Pressable
+                key={idx}
+                style={styles.thumbBox}
+                onPress={() => {
+                  const productId =
+                    item?.productId?._id ||
+                    item?.productId?.id ||
+                    (typeof item?.productId === "string" ? item.productId : undefined);
+
+                  if (productId) {
+                    onProductPress(productId);
+                  }
+                }}
+              >
                 {imageUri ? (
                   <Image source={{ uri: imageUri }} style={styles.thumbImg} />
                 ) : (
@@ -131,7 +147,7 @@ export const OrderCard = ({
                     <Package size={18} color="#7C8E84" strokeWidth={2.3} />
                   </View>
                 )}
-              </View>
+              </Pressable>
             );
           })}
 
@@ -165,10 +181,10 @@ export const OrderCard = ({
               </Text>
               {isFailed || isCancelled ? (
                 <CircleX size={21} color="#DC2626" strokeWidth={2.8} />
-              ) : isDelivered ? (
+              ) : isAcceptedOrUpdated ? (
                 <CheckCircle2 size={21} color="#16A34A" strokeWidth={2.8} />
               ) : (
-                <CircleX size={21} color="#8DA7D3" strokeWidth={2.8} />
+                !isPlaced && <CheckCircle2 size={21} color="#3B82F6" strokeWidth={2.8} />
               )}
             </View>
             <Text style={styles.timeText} numberOfLines={1}>
@@ -213,6 +229,7 @@ type Props = {
   isCancelling: boolean;
   onRateOrder: () => void;
   onOrderAgain: () => void;
+  onProductPress: (productId: string) => void;
 };
 
 const styles = StyleSheet.create({

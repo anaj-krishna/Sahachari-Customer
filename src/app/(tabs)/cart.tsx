@@ -1,8 +1,10 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowRight, ShoppingBag } from "lucide-react-native";
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   FlatList,
   Pressable,
   RefreshControl,
@@ -12,12 +14,21 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CartItem } from "../../components/cart/CartItem";
 import { CheckoutModal } from "../../components/cart/CheckoutModal";
-import { SuccessModal } from "../../components/cart/SuccessModal";
+import { useCheckoutStore } from "../../store/checkout.store";
 import { useCart } from "../../hooks/useCart";
 import { useSmartRefresh } from "../../hooks/useSmartRefresh";
 
 export default function Cart() {
   const router = useRouter();
+  const setCheckoutData = useCheckoutStore((s) => s.setCheckoutData);
+  const { returnProductId, fromCategory, fromStoreId, returnTo, openDelivery } =
+    useLocalSearchParams<{
+      returnProductId?: string;
+      fromCategory?: string;
+      fromStoreId?: string;
+      returnTo?: string;
+      openDelivery?: string;
+    }>();
   const {
     cart,
     isLoading,
@@ -25,23 +36,58 @@ export default function Cart() {
     updatingItems,
     showCheckoutModal,
     setShowCheckoutModal,
-    showSuccessModal,
-    setShowSuccessModal,
     address,
     setAddress,
     handleQuantityChange,
     handleRemoveItem,
     handleCheckout,
-    isPlacingOrder,
     parseNumber,
     refetch,
-    orderResponse,
-    setOrderResponse,
   } = useCart();
 
   const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
     await refetch();
   });
+
+  const handleBackToSource = useCallback(() => {
+    if (returnProductId) {
+      router.replace({
+        pathname: "/product/[id]",
+        params: {
+          id: returnProductId,
+          fromCategory,
+          fromStoreId,
+          returnTo,
+        },
+      } as any);
+      return true;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return true;
+    }
+
+    return false;
+  }, [fromCategory, fromStoreId, returnProductId, returnTo, router]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => handleBackToSource(),
+      );
+
+      return () => subscription.remove();
+    }, [handleBackToSource]),
+  );
+
+  useEffect(() => {
+    if (openDelivery === "1") {
+      setShowCheckoutModal(true);
+      router.setParams({ openDelivery: undefined as any });
+    }
+  }, [openDelivery, router, setShowCheckoutModal]);
 
   if (isLoading)
     return (
@@ -52,6 +98,20 @@ export default function Cart() {
     );
 
   const isEmpty = !cart || !cart.items?.length;
+
+  const handleProceedToPayment = () => {
+    const canProceed = handleCheckout();
+    if (!canProceed) return;
+
+    setCheckoutData({
+      address,
+      total,
+      itemCount: cart?.items?.length || 0,
+      checkoutType: "cart",
+      singlePayload: null,
+    });
+    router.push("/payment");
+  };
 
   return (
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-gray-50">
@@ -97,6 +157,12 @@ export default function Cart() {
                 onQuantityChange={handleQuantityChange}
                 onRemove={handleRemoveItem}
                 parseNumber={parseNumber}
+                onOpenProduct={(productId: string) =>
+                  router.push({
+                    pathname: "/product/[id]",
+                    params: { id: productId, returnTo: "cart" },
+                  } as any)
+                }
               />
             )}
           />
@@ -127,20 +193,10 @@ export default function Cart() {
         onClose={() => setShowCheckoutModal(false)}
         address={address}
         setAddress={setAddress}
-        onConfirm={handleCheckout}
-        isPending={isPlacingOrder}
+        onConfirm={handleProceedToPayment}
+        isPending={false}
         total={total}
         itemSCount={cart?.items?.length}
-      />
-
-      <SuccessModal
-        visible={showSuccessModal}
-        onClose={() => {
-          setShowSuccessModal(false);
-          setOrderResponse(null);
-          router.push("/home");
-        }}
-        orderResponse={orderResponse}
       />
     </SafeAreaView>
   );

@@ -1,16 +1,23 @@
 // useProductActions.ts
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Platform, ToastAndroid } from "react-native";
-import { addToCart, placeSingleOrder } from "../services/orders.api";
+import { addToCart } from "../services/orders.api";
+import { useCheckoutStore } from "../store/checkout.store";
 
-export function useProductActions(product: any) {
+interface DirectCheckoutContext {
+  returnTo?: string;
+  fromCategory?: string;
+}
+
+export function useProductActions(product: any, context?: DirectCheckoutContext) {
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const setCheckoutData = useCheckoutStore((s) => s.setCheckoutData);
   const [loading, setLoading] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showQuantityModal, setShowQuantityModal] = useState(false);
-  const [orderResponse, setOrderResponse] = useState<any>(null);
   const [address, setAddress] = useState({
     street: "",
     city: "",
@@ -47,24 +54,37 @@ export function useProductActions(product: any) {
   const handleBuyNow = async (quantity: number) => {
     if (!address.street || address.street.length < 5 || !address.phone) {
       Alert.alert("Error", "Please fill valid delivery details");
-      return;
+      return false;
     }
+
+    if (!product?.id) {
+      Alert.alert("Error", "Product details are missing. Please retry.");
+      return false;
+    }
+
+    const basePrice = Number(product?.finalPrice ?? product?.price ?? 0);
 
     setLoading(true);
     try {
-      const response = await placeSingleOrder({
-        productId: product.id,
-        quantity,
-        deliveryAddress: address,
+      setCheckoutData({
+        address,
+        total: basePrice * quantity,
+        itemCount: quantity,
+        checkoutType: "single",
+        singlePayload: {
+          productId: String(product.id),
+          quantity,
+          returnTo: context?.returnTo,
+          fromCategory: context?.fromCategory,
+        },
       });
-      setOrderResponse(response);
-      await queryClient.invalidateQueries({ queryKey: ["orders"] });
-      setShowAddressModal(false);
-      setShowSuccessModal(true);
+      router.push("/payment");
+      return true;
     } catch (err: any) {
       console.error("Buy now error:", err);
       const msg = err?.response?.data?.message;
       Alert.alert("Order Failed", Array.isArray(msg) ? msg[0] : msg || "Error");
+      return false;
     } finally {
       setLoading(false);
     }
@@ -76,13 +96,9 @@ export function useProductActions(product: any) {
     setAddress,
     showAddressModal,
     setShowAddressModal,
-    showSuccessModal,
-    setShowSuccessModal,
     showQuantityModal,
     setShowQuantityModal,
     handleAddToCart,
     handleBuyNow,
-    orderResponse,
-    setOrderResponse,
   };
 }

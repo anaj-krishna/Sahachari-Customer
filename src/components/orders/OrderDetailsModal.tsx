@@ -85,14 +85,17 @@ export function OrderDetailsModal({
   isCancelling,
   isOrderingAgain,
   onOrderAgain,
+  onOpenProduct,
 }: any) {
   const currentUserName = useAuthStore((s) => s.user?.name);
   const items = order?.items || [];
   const status = String(order?.status || "").toUpperCase();
   const canCancel = status === "PLACED";
+  const isPlaced = status === "PLACED";
   const isDelivered = status === "DELIVERED";
   const isFailed = status === "FAILED";
   const isCancelled = status === "CANCELLED";
+  const isAcceptedOrUpdated = ["READY", "CONFIRMED", "SHIPPED", "DELIVERED"].includes(status);
   const timelineIndex = getTimelineIndex(status);
 
   const receiverName =
@@ -144,24 +147,26 @@ export function OrderDetailsModal({
             >
               <View style={styles.sectionCard}>
                 <View style={styles.statusRow}>
-                  <View
-                    style={[
-                      styles.statusIconBox,
-                      isDelivered
-                        ? styles.statusIconBoxDelivered
-                        : isFailed || isCancelled
-                        ? styles.statusIconBoxFailed
-                        : styles.statusIconBoxDefault,
-                    ]}
-                  >
-                    {isFailed || isCancelled ? (
-                      <CircleX size={30} color="#DC2626" strokeWidth={2.8} />
-                    ) : (
-                      <Check size={30} color={isDelivered ? "#16A34A" : "#2563EB"} strokeWidth={2.8} />
-                    )}
-                  </View>
+                  {!isPlaced && (
+                    <View
+                      style={[
+                        styles.statusIconBox,
+                        isDelivered
+                          ? styles.statusIconBoxDelivered
+                          : isFailed || isCancelled
+                          ? styles.statusIconBoxFailed
+                          : styles.statusIconBoxDefault,
+                      ]}
+                    >
+                      {isFailed || isCancelled ? (
+                        <CircleX size={30} color="#DC2626" strokeWidth={2.8} />
+                      ) : isAcceptedOrUpdated ? (
+                        <Check size={30} color={isDelivered ? "#16A34A" : "#2563EB"} strokeWidth={2.8} />
+                      ) : null}
+                    </View>
+                  )}
 
-                  <View style={styles.statusTextWrap}>
+                  <View style={[styles.statusTextWrap, isPlaced && styles.statusTextWrapNoIcon]}>
                     <Text
                       style={[
                         styles.statusTitle,
@@ -225,8 +230,18 @@ export function OrderDetailsModal({
                   const qty = Number(item?.quantity || 0);
                   const price = Number(item?.price || 0);
 
+                  const productId =
+                    item?.productId?._id ||
+                    item?.productId?.id ||
+                    (typeof item?.productId === "string" ? item.productId : undefined);
+
                   return (
-                    <View key={idx} style={styles.itemRow}>
+                    <Pressable
+                      key={idx}
+                      style={styles.itemRow}
+                      onPress={() => productId && onOpenProduct?.(productId)}
+                      disabled={!productId}
+                    >
                       <View style={styles.itemThumbBox}>
                         {imageUri ? (
                           <Image source={{ uri: imageUri }} style={styles.itemThumb} />
@@ -245,7 +260,7 @@ export function OrderDetailsModal({
                       </View>
 
                       <Text style={styles.itemPrice}>₹{money(price * qty)}</Text>
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>
@@ -292,7 +307,7 @@ export function OrderDetailsModal({
             </ScrollView>
 
             <View style={styles.bottomActions}>
-              {!canCancel && (
+              {isDelivered && (
                 <Pressable
                   style={[styles.actionBtn, styles.secondaryBtn]}
                   onPress={() => Alert.alert("Coming Soon", "Rate order feature will be available soon")}
@@ -446,6 +461,9 @@ const styles = StyleSheet.create({
   statusTextWrap: {
     marginLeft: 10,
     flex: 1,
+  },
+  statusTextWrapNoIcon: {
+    marginLeft: 0,
   },
   timelineWrap: {
     flexDirection: "row",

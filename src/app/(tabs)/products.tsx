@@ -1,10 +1,12 @@
 import { useAuthStore } from "@/store/auth.store";
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, ShoppingBag, Store as StoreIcon } from "lucide-react-native";
-import React from "react";
+import React, { useCallback } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   FlatList,
   Image,
   Pressable,
@@ -103,9 +105,46 @@ export default function ProductsScreen() {
     return showingStores ? renderStore({ item }) : renderProduct({ item });
   };
 
-  const handleBackToAllProducts = () => {
+  const handleBackToAllProducts = useCallback(() => {
     router.replace({ pathname: "/products" } as any);
-  };
+  }, [router]);
+
+  const handleHeaderBack = useCallback(() => {
+    // Expected flow: Items -> Stores -> All Products -> Home
+    if (storeId && categoryFilter) {
+      router.replace({
+        pathname: "/products",
+        params: { category: categoryFilter },
+      } as any);
+      return;
+    }
+
+    if (storeId) {
+      handleBackToAllProducts();
+      return;
+    }
+
+    if (showingStores) {
+      handleBackToAllProducts();
+      return;
+    }
+
+    router.replace("/(tabs)/home" as any);
+  }, [categoryFilter, handleBackToAllProducts, router, showingStores, storeId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          handleHeaderBack();
+          return true;
+        },
+      );
+
+      return () => subscription.remove();
+    }, [handleHeaderBack]),
+  );
 
   const handleStorePress = (selectedStoreId: string) => {
     router.push({
@@ -119,7 +158,15 @@ export default function ProductsScreen() {
 
   const handleProductPress = (product: any) => {
     const productId = product._id || product.id;
-    router.push(`/product/${productId}` as any);
+    router.push({
+      pathname: "/product/[id]",
+      params: {
+        id: productId,
+        fromCategory: categoryFilter,
+        fromStoreId: storeId,
+        returnTo: "products",
+      },
+    } as any);
   };
 
   const renderStore = ({ item }: { item: Store }) => {
@@ -398,14 +445,12 @@ const renderProduct = ({ item }: { item: Product }) => {
         scrollEventThrottle={16}
         ListHeaderComponent={
           <View style={styles.header}>
-            {showingStores && (
-              <Pressable
-                onPress={handleBackToAllProducts}
-                className="self-start mb-3 bg-white/95 rounded-full p-2 shadow-sm"
-              >
-                <ArrowLeft size={22} color="#1F2937" strokeWidth={2.4} />
-              </Pressable>
-            )}
+            <Pressable
+              onPress={handleHeaderBack}
+              className="self-start mb-3 bg-white/95 rounded-full p-2 shadow-sm"
+            >
+              <ArrowLeft size={22} color="#1F2937" strokeWidth={2.4} />
+            </Pressable>
             <Text className="text-3xl font-bold text-gray-800 mb-1">
               {showingStores ? "Stores" : "All Products"}
             </Text>

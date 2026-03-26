@@ -1,4 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
@@ -13,10 +14,11 @@ import {
   ShoppingCart,
   XCircle,
 } from "lucide-react-native";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Dimensions,
   Image,
   Pressable,
@@ -29,7 +31,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AddToCartModal } from "../../components/cart/AddToCartModal";
 import { CheckoutModal } from "../../components/cart/CheckoutModal";
-import { SuccessModal } from "../../components/cart/SuccessModal";
 import { useProductActions } from "../../hooks/useProductActions";
 import { useProduct } from "../../hooks/useProducts";
 import { useSmartRefresh } from "../../hooks/useSmartRefresh";
@@ -42,7 +43,13 @@ export const unstable_settings = {
 const { width } = Dimensions.get("window");
 
 export default function ProductDetails() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, fromCategory, fromStoreId, returnTo, openDelivery } = useLocalSearchParams<{
+    id: string;
+    fromCategory?: string;
+    fromStoreId?: string;
+    returnTo?: string;
+    openDelivery?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -56,15 +63,14 @@ export default function ProductDetails() {
     setAddress,
     showAddressModal,
     setShowAddressModal,
-    showSuccessModal,
-    setShowSuccessModal,
     showQuantityModal,
     setShowQuantityModal,
     handleAddToCart,
     handleBuyNow,
-    orderResponse,
-    setOrderResponse,
-  } = useProductActions(product);
+  } = useProductActions(product, {
+    returnTo,
+    fromCategory,
+  });
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -127,13 +133,94 @@ export default function ProductDetails() {
     }
   };
 
+  const handleBack = useCallback(() => {
+    if (showAddressModal) {
+      setShowAddressModal(false);
+      return;
+    }
+
+    if (returnTo === "cart") {
+      router.replace("/(tabs)/cart" as any);
+      return;
+    }
+
+    if (returnTo === "orders") {
+      router.replace("/(tabs)/orders" as any);
+      return;
+    }
+
+    if (returnTo === "services") {
+      router.replace("/services" as any);
+      return;
+    }
+
+    if (returnTo === "products") {
+      if (fromStoreId && fromCategory) {
+        router.replace({
+          pathname: "/products",
+          params: {
+            category: fromCategory,
+            storeId: fromStoreId,
+          },
+        } as any);
+        return;
+      }
+
+      if (fromCategory) {
+        router.replace({
+          pathname: "/products",
+          params: { category: fromCategory },
+        } as any);
+        return;
+      }
+
+      router.replace("/products" as any);
+      return;
+    }
+
+    router.replace("/products" as any);
+  }, [
+    fromCategory,
+    fromStoreId,
+    returnTo,
+    router,
+    setShowAddressModal,
+    showAddressModal,
+  ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          handleBack();
+          return true;
+        },
+      );
+
+      return () => subscription.remove();
+    }, [handleBack]),
+  );
+
+  const openCartWithReturnContext = () => {
+    router.push({
+      pathname: "/(tabs)/cart",
+      params: {
+        returnProductId: id,
+        fromCategory,
+        fromStoreId,
+        returnTo: returnTo ?? (isService ? "services" : "products"),
+      },
+    } as any);
+  };
+
 
   const handleAddToCartClick = () => {
     // For services, automatically use quantity 1
     if (isService) {
       handleAddToCart(1).then((success) => {
         if (success) {
-          router.push("/(tabs)/cart");
+          openCartWithReturnContext();
         }
       });
     } else {
@@ -145,7 +232,7 @@ export default function ProductDetails() {
     const success = await handleAddToCart(selectedQuantity);
     if (success) {
       // Redirect to cart page on success
-      router.push("/(tabs)/cart");
+      openCartWithReturnContext();
     }
     return success;
   };
@@ -153,6 +240,13 @@ export default function ProductDetails() {
   const handleBuyNowClick = () => {
     setShowAddressModal(true);
   };
+
+  useEffect(() => {
+    if (openDelivery === "1") {
+      setShowAddressModal(true);
+      router.setParams({ openDelivery: undefined as any });
+    }
+  }, [openDelivery, router, setShowAddressModal]);
 
   if (isLoading) {
     return (
@@ -210,7 +304,7 @@ export default function ProductDetails() {
         style={{ paddingTop: 12 }}
       >
         <Pressable
-          onPress={() => router.back()}
+          onPress={handleBack}
           className="bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg"
         >
           <ArrowLeft size={24} color="#1F2937" strokeWidth={2.5} />
@@ -583,17 +677,6 @@ export default function ProductDetails() {
         isPending={loading}
         total={isService ? finalPrice : totalPrice}
         itemSCount={isService ? 1 : quantity}
-      />
-
-      {/* Success Modal */}
-      <SuccessModal
-        visible={showSuccessModal}
-        onClose={() => {
-          setShowSuccessModal(false);
-          setOrderResponse(null);
-          router.push("/orders");
-        }}
-        orderResponse={orderResponse}
       />
     </View>
   );
