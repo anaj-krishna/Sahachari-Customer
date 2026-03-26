@@ -63,7 +63,7 @@ export function CheckoutModal({
         // Add any other mappings from your user profile to address fields
       }));
     }
-  }, [profile, visible]);
+  }, [profile, setAddress, visible]);
 
   return (
     <Modal
@@ -202,7 +202,7 @@ export function CheckoutModal({
                 ) : (
                   <>
                     <Text className="text-white font-bold text-lg mr-2">
-                      Place Order
+                      Continue to Payment
                     </Text>
                     <ArrowRight size={24} color="white" />
                   </>

@@ -1,9 +1,11 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { Clock3, MapPin, Wrench } from "lucide-react-native";
-import React from "react";
+import React, { useCallback } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   FlatList,
   Image,
   Pressable,
@@ -28,6 +30,20 @@ export default function ServicesScreen() {
   const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
     await refetch();
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          router.replace("/(tabs)/home" as any);
+          return true;
+        },
+      );
+
+      return () => subscription.remove();
+    }, [router]),
+  );
 
   const renderService = ({ item }: { item: Product }) => {
     const rate = parseNumber(item.finalPrice ?? item.price);

@@ -1,4 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import {
     Briefcase,
@@ -13,10 +14,12 @@ import {
     User,
     Utensils,
 } from "lucide-react-native";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
+  Alert,
     Animated,
+  BackHandler,
     Dimensions,
     Image,
     Linking,
@@ -113,6 +116,27 @@ export default function Home() {
   const { onScroll, getRefreshControlProps } = useSmartRefresh(async () => {
     await refetch();
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          Alert.alert("Exit App", "Do you want to close the app?", [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Exit",
+              style: "destructive",
+              onPress: () => BackHandler.exitApp(),
+            },
+          ]);
+          return true;
+        },
+      );
+
+      return () => subscription.remove();
+    }, []),
+  );
 
   // Extract unique categories from products data
   const categories = useMemo(() => {

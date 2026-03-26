@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   getCart,
-  placeOrder,
   removeCartItem,
   updateCartItemQuantity,
 } from "../services/orders.api";
@@ -14,8 +13,6 @@ export function useCart() {
     {},
   );
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [orderResponse, setOrderResponse] = useState<any>(null);
 
   const [address, setAddress] = useState({
     street: "",
@@ -142,30 +139,6 @@ export function useCart() {
     },
   });
 
-  /* ================= PLACE ORDER ================= */
-
-  const placeOrderMutation = useMutation({
-    mutationFn: placeOrder,
-
-    onSuccess: (response) => {
-      // Store the response for display in success modal
-      setOrderResponse(response);
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-
-      setShowCheckoutModal(false);
-      setTimeout(() => setShowSuccessModal(true), 250);
-
-      setAddress({
-        street: "",
-        city: "",
-        zipCode: "",
-        phone: "",
-        notes: "",
-      });
-    },
-  });
-
   /* ================= HELPERS ================= */
 
   const parseNumber = (v: any) => {
@@ -206,12 +179,8 @@ export function useCart() {
     updatingItems,
     showCheckoutModal,
     setShowCheckoutModal,
-    showSuccessModal,
-    setShowSuccessModal,
     address,
     setAddress,
-    orderResponse,
-    setOrderResponse,
 
     handleQuantityChange: (id: string, cur: number, delta: number) => {
       const next = parseNumber(cur) + parseNumber(delta);
@@ -232,13 +201,12 @@ export function useCart() {
         !address.phone
       ) {
         alert("Please fill in all required fields");
-        return;
+        return false;
       }
 
-      placeOrderMutation.mutate(address);
+      return true;
     },
 
-    isPlacingOrder: placeOrderMutation.isPending,
     parseNumber,
     refetch,
   };

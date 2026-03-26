@@ -14,7 +14,7 @@ import {
   ShoppingCart,
   XCircle,
 } from "lucide-react-native";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -31,7 +31,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AddToCartModal } from "../../components/cart/AddToCartModal";
 import { CheckoutModal } from "../../components/cart/CheckoutModal";
-import { SuccessModal } from "../../components/cart/SuccessModal";
 import { useProductActions } from "../../hooks/useProductActions";
 import { useProduct } from "../../hooks/useProducts";
 import { useSmartRefresh } from "../../hooks/useSmartRefresh";
@@ -44,11 +43,12 @@ export const unstable_settings = {
 const { width } = Dimensions.get("window");
 
 export default function ProductDetails() {
-  const { id, fromCategory, fromStoreId, returnTo } = useLocalSearchParams<{
+  const { id, fromCategory, fromStoreId, returnTo, openDelivery } = useLocalSearchParams<{
     id: string;
     fromCategory?: string;
     fromStoreId?: string;
     returnTo?: string;
+    openDelivery?: string;
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -63,15 +63,14 @@ export default function ProductDetails() {
     setAddress,
     showAddressModal,
     setShowAddressModal,
-    showSuccessModal,
-    setShowSuccessModal,
     showQuantityModal,
     setShowQuantityModal,
     handleAddToCart,
     handleBuyNow,
-    orderResponse,
-    setOrderResponse,
-  } = useProductActions(product);
+  } = useProductActions(product, {
+    returnTo,
+    fromCategory,
+  });
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -135,6 +134,11 @@ export default function ProductDetails() {
   };
 
   const handleBack = useCallback(() => {
+    if (showAddressModal) {
+      setShowAddressModal(false);
+      return;
+    }
+
     if (returnTo === "cart") {
       router.replace("/(tabs)/cart" as any);
       return;
@@ -175,7 +179,14 @@ export default function ProductDetails() {
     }
 
     router.replace("/products" as any);
-  }, [fromCategory, fromStoreId, returnTo, router]);
+  }, [
+    fromCategory,
+    fromStoreId,
+    returnTo,
+    router,
+    setShowAddressModal,
+    showAddressModal,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -229,6 +240,13 @@ export default function ProductDetails() {
   const handleBuyNowClick = () => {
     setShowAddressModal(true);
   };
+
+  useEffect(() => {
+    if (openDelivery === "1") {
+      setShowAddressModal(true);
+      router.setParams({ openDelivery: undefined as any });
+    }
+  }, [openDelivery, router, setShowAddressModal]);
 
   if (isLoading) {
     return (
@@ -659,17 +677,6 @@ export default function ProductDetails() {
         isPending={loading}
         total={isService ? finalPrice : totalPrice}
         itemSCount={isService ? 1 : quantity}
-      />
-
-      {/* Success Modal */}
-      <SuccessModal
-        visible={showSuccessModal}
-        onClose={() => {
-          setShowSuccessModal(false);
-          setOrderResponse(null);
-          router.push("/orders");
-        }}
-        orderResponse={orderResponse}
       />
     </View>
   );
